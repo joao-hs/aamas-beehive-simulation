@@ -6,7 +6,7 @@ BACKGROUND_COLOR = (0, 100, 0)
 
 COLORS = {
     "F": (255, 182, 193),  # pink
-    "H": (139, 128, 0),  # dark yellow
+    "H": (255, 0, 0),  # red
     "W": (255, 140, 0),  # orange
     "B": (255, 255, 0)  # yellow
 }
