@@ -4,7 +4,7 @@ from copy import copy
 from os import environ
 
 import numpy as np
-from gymnasium.spaces import Discrete, MultiDiscrete
+from gymnasium.spaces import Discrete, MultiDiscrete, MultiBinary
 
 from pettingzoo import ParallelEnv
 
@@ -20,6 +20,10 @@ def configure_seed(seed):
     environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
+
+BEE_POSSIBLE_ACTIONS = range(6) # 0: stay still, 1: move up, 2: move down, 3: move left, 4: move right, 5: interact
+WASP_POSSIBLE_ACTIONS = range(6) # 0: stay still, 1: move up, 2: move down, 3: move left, 4: move right, 5: interact
+QUEENBEE_POSSIBLE_ACTIONS = None # depends on the number of bees in the colony. For each bee, decide 0: let go, 1: keep
 
 class BeeColonyEnv(ParallelEnv):
     metadata = {
@@ -68,9 +72,9 @@ class BeeColonyEnv(ParallelEnv):
 
         # Other attributes
         self.initial_agents_state = [
-            QueenBee(beehive_id) for beehive_id in range(self._n_colonies)
+            QueenBee(beehive_id, self._n_bees_per_colony[beehive_id]) for beehive_id in range(self._n_colonies)
         ] + [
-            Bee(self._n_colonies + bee_id) for bee_id in range(self._n_bees)
+            Bee(self._n_colonies + bee_id, self.__get_beehive_id(bee_id), self.__get_local_beehive_id(bee_id)) for bee_id in range(self._n_bees)
         ] + [
             Wasp(self._n_colonies + self._n_bees + wasp_id) for wasp_id in range(self._n_wasps)
         ]
@@ -120,6 +124,7 @@ class BeeColonyEnv(ParallelEnv):
         for agent in self.agents:
             if isinstance(agent, QueenBee):
                 agent.set_spawn(self.beehive_coordinates[agent.id])
+                agent.presence_array = np.ones(self._n_bees_per_colony[agent.id])
             elif isinstance(agent, Bee):
                 agent.set_spawn(self.bee_coordinates[agent.id - self._n_colonies])
             elif isinstance(agent, Wasp):
@@ -139,9 +144,9 @@ class BeeColonyEnv(ParallelEnv):
         }
 
         self.action_spaces = {
-            # each bee can move in 4 directions or stay still
-            # the queenbee only has two actions: let go N bees or do nothing
-            agent.id: Discrete(5) if isinstance(agent, Bee) or isinstance(agent, Wasp) else Discrete(2) for agent in self.agents
+            # each bee can move in 4 directions, stay still or interact with the current position
+            # the queenbee has to decide if it will let go a bee or not
+            agent.id: Discrete(6) if isinstance(agent, Bee) or isinstance(agent, Wasp) else MultiBinary(self._n_bees_per_colony[agent.id]) for agent in self.agents
         }
 
         return observations
@@ -157,8 +162,28 @@ class BeeColonyEnv(ParallelEnv):
                 self.__update_agent(agent, action)
 
         # Generate action masks
-        # TODO: array of 1's the same size as the number of possible actions
-        # TODO: 0 on the impossible actions
+        
+        masks = {
+            agent.id: np.ones(self.action_spaces[agent.id].n, dtype=np.int8) if not isinstance(agent, QueenBee) else 2*np.ones(self.action_spaces[agent.id].n, dtype=np.int8) for agent in self.agents
+        }
+
+        for agent in self.agents:
+            if isinstance(agent, Bee):
+                position = self.bee_coordinates[agent.id - self._n_colonies]
+                if position != agent.beehive_location:
+                    self.agents[agent.beehive_id].presence_array[agent.local_beehive_id] = 0
+                else:
+                    if self.agents[agent.beehive_id].presence_array[agent.local_beehive_id] == 1: # inside the beehive (and queen is account for it)
+                        # cannot move
+                        masks[agent.id] = np.zeros(self.action_spaces[agent.id].n, dtype=np.int8)
+                        masks[agent.id][0] = 1
+                    else:
+                        # needs to move out of the beehive
+                        masks[agent.id][0] = 0
+            if isinstance(agent, QueenBee):
+                for i, presence in enumerate(agent.presence_array):
+                    if presence == 0:
+                        masks[agent.id][i] = 0
 
         # Check termination conditions
         done = self.timestep >= self._max_steps or all(not agent.is_alive for agent in self.agents)
@@ -171,7 +196,7 @@ class BeeColonyEnv(ParallelEnv):
         # Infos
         infos = {}
         
-        return observations, rewards, done, infos
+        return observations, rewards, masks, done, infos
         
 
     def render(self):
@@ -234,10 +259,9 @@ class BeeColonyEnv(ParallelEnv):
         }
         return observation
 
-    def __update_agent(self, agent: Agent, action: int):
+    def __update_agent(self, agent: Agent, action: int | np.ndarray):
         if isinstance(agent, QueenBee):
-            # TODO
-            return
+            agent.presence_array = np.multiply(agent.presence_array, action)
         elif isinstance(agent, Bee):
             x, y = self.bee_coordinates[agent.id - self._n_colonies]
             if action == 0:
@@ -250,9 +274,19 @@ class BeeColonyEnv(ParallelEnv):
                 self.bee_coordinates[agent.id - self._n_colonies] = self.__clamp_coord((x, y - 1))
             elif action == 4: # move right
                 self.bee_coordinates[agent.id - self._n_colonies] = self.__clamp_coord((x, y + 1))
+            elif action == 5: # interact
+                position = self.bee_coordinates[agent.id - self._n_colonies]
+                if position in self.flower_coordinates:
+                    # consume flower
+                    pass
+                elif position in self.beehive_coordinates:
+                    # return to beehive
+                    pass
+                elif position in self.wasp_coordinates:
+                    # attack wasp
+                    pass
             else:
                 raise Exception("Unknown action")
-            # TODO: check if the bee is on a flower
 
         elif isinstance(agent, Wasp):
             x, y = self.wasp_coordinates[agent.id - self._n_colonies - self._n_bees]
@@ -266,6 +300,11 @@ class BeeColonyEnv(ParallelEnv):
                 self.wasp_coordinates[agent.id - self._n_colonies - self._n_bees] = self.__clamp_coord((x, y - 1))
             elif action == 4:
                 self.wasp_coordinates[agent.id - self._n_colonies - self._n_bees] = self.__clamp_coord((x, y + 1))
+            elif action == 5:
+                position = self.wasp_coordinates[agent.id - self._n_colonies - self._n_bees]
+                if position in self.beehive_coordinates:
+                    # attack beehive
+                    pass
             else:
                 raise Exception("Unknown action")
             # TODO check if the wasp is on a beehive
@@ -275,5 +314,18 @@ class BeeColonyEnv(ParallelEnv):
 
     def __clamp_coord(self, coord):
         return (max(0, min(coord[0], self._grid_shape[0] - 1)), max(0, min(coord[1], self._grid_shape[1] - 1)))
-
+    
+    def __get_beehive_id(self, bee_number):
+        for i, n_bees in enumerate(self._n_bees_per_colony):
+            if bee_number < n_bees:
+                return i
+            bee_number -= n_bees
+        return None
+    
+    def __get_local_beehive_id(self, bee_number):
+        for _, n_bees in enumerate(self._n_bees_per_colony):
+            if bee_number < n_bees:
+                return bee_number
+            bee_number -= n_bees
+        return None
 
