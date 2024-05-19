@@ -292,15 +292,27 @@ class BeeColonyEnv(ParallelEnv):
                 self.bee_coordinates[agent.id - self._n_colonies] = self.__clamp_coord((x, y - 1))
             elif action == 4: # move right
                 self.bee_coordinates[agent.id - self._n_colonies] = self.__clamp_coord((x, y + 1))
+                
             elif action == 5: # attack wasp
-                # TODO implement attack
-                pass
-            elif action == 6: # pick up polen / eat flower
-                # TODO implement pick
-                pass
-            elif action == 7: # drop / enter beehive
-                # TODO implement drop + enter
-                pass
+                adjacent_positions = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+                for pos in adjacent_positions:
+                    wasp_index = self.__wasp_at_position(pos)
+                    if wasp_index is not None:
+                        # Here you would implement the interaction, e.g., reduce health of the wasp
+                        self.wasps[wasp_index].health -= 1  # Example: Reduce health by 1
+                        if self.wasps[wasp_index].health <= 0:
+                            self.remove_wasp(wasp_index)  # Remove wasp if health is zero
+                        break
+                    
+            elif action == 6:  # pick up pollen
+                agent.collect_pollen()
+
+            elif action == 7:  # drop / enter beehive
+                # Assuming you need to check if the bee is at its beehive location
+                current_position = self.bee_coordinates[agent.id - self._n_colonies]
+                if current_position == agent.beehive_location:
+                    agent.drop_pollen()
+
             
             else:
                 raise Exception("Unknown action")
