@@ -112,9 +112,11 @@ class BeeColonyEnv(ParallelEnv):
             (a,b) for a in range(self._grid_shape[0]) for b in range(self._grid_shape[1]) if random.random() <= self._flower_density
         ]
 
-        self.beehive_coordinates = [
-            self.__assign_beehive_location() for _ in range(self._n_colonies)
-        ]
+        self.beehive_coordinates = []
+        
+        for _ in range(self._n_colonies):
+            new_location = self.__assign_beehive_location()
+            self.beehive_coordinates.append(new_location)
         
         self.bee_coordinates = [
             self.beehive_coordinates[colony] for colony in range(self._n_colonies) for _ in range(self._n_bees_per_colony[colony])
@@ -247,13 +249,46 @@ class BeeColonyEnv(ParallelEnv):
         return position
 
     def __assign_beehive_location(self) -> tuple[int]:
-        # TODO: ensure that beehives are scattered enough
-        return self.__random_available_position()
+        """Assigns a location for a new beehive, ensuring it is adequately spaced from existing beehives."""
+        min_distance = 10  # Minimum acceptable distance between beehives, adjust as needed.
+        
+        while True:
+            potential_location = self.__random_available_position()
+            if all(self.__distance(potential_location, existing_location) >= min_distance for existing_location in self.beehive_coordinates):
+                return potential_location
+
+
+    def __distance(self, pos1: tuple[int], pos2: tuple[int]) -> float:
+        """Calculates the Euclidean distance between two points."""
+        return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
+
     
     def __assign_wasp_start_location(self) -> tuple[int]:
-        # TODO: probably should start somewhere far from the beehives
-        return self.__random_available_position()
-    
+        """Assigns a start location for a new wasp, ensuring it starts far from any beehives."""
+        min_distance = 20  # Minimum distance from any beehive, adjust as needed.
+
+        while True:
+            potential_location = self.__random_available_position()
+            if all(self.__distance(potential_location, beehive_location) >= min_distance for beehive_location in self.beehive_coordinates):
+                return potential_location
+            
+    def __wasp_at_position(self, position: tuple[int, int]) -> int | None:
+        """
+        Check if a wasp is at the specified position.
+        
+        Parameters:
+            position (tuple): The grid position to check for the presence of a wasp.
+
+        Returns:
+            int | None: The index of the wasp if a wasp is present at the position, otherwise None.
+        """
+        # Assuming wasp_coordinates stores tuples of wasp positions
+        for index, wasp_pos in enumerate(self.wasp_coordinates):
+            if wasp_pos == position:
+                return index
+        return None
+
+
     def __observation(self, agent: Agent):
         if isinstance(agent, QueenBee):
             center = agent.spawn_location
@@ -331,9 +366,10 @@ class BeeColonyEnv(ParallelEnv):
                 self.wasp_coordinates[agent.id - self._n_colonies - self._n_bees] = self.__clamp_coord((x, y + 1))
             elif action == 5:
                 position = self.wasp_coordinates[agent.id - self._n_colonies - self._n_bees]
-                if position in self.beehive_coordinates:
-                    # attack beehive
-                    pass
+                beehive = self.beehives.get(position)
+                if beehive:
+                    agent.attack_beehive(beehive)
+
             else:
                 raise Exception("Unknown action")
             # TODO check if the wasp is on a beehive

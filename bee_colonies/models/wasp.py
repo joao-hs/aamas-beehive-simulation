@@ -6,6 +6,7 @@ class Wasp(Agent):
         self.name = str(id)
         self.health = 20
         self.is_alive = True
+        self.attack_power = 1 
 
     def receive_damage(self, damage):
         """
@@ -16,6 +17,11 @@ class Wasp(Agent):
         if self.health <= 0:
             self.health = 0  # Ensure health doesn't go negative.
             self.is_alive = False
+            
+    def attack_beehive(self, beehive):
+        """Attacks the specified beehive."""
+        if beehive:
+            beehive.receive_damage(self.attack_power)
 
     def see(self, observation):
         return observation
