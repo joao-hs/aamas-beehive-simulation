@@ -1,9 +1,10 @@
 import numpy as np
 from abc import ABC, abstractmethod
 
+Coord = tuple[int, int]
+
 
 class Agent(ABC):
-
     """
     Base agent class.
     Represents the concept of an autonomous agent.
@@ -35,18 +36,20 @@ class Agent(ABC):
 
     """
 
-    def __init__(self, id: int):
-        self.id = id
-        self.spawn_location = None
-        self.observation = None
+    def __init__(self):
+        self.spawn_location: Coord = None
+        self.last_observation = None
+        self.mask = None
         self.is_alive = None
-    
-    def set_spawn(self, spawn_location: tuple[int]):
+        self.action_space = None
+
+    def set_spawn(self, spawn_location: Coord):
         self.spawn_location = spawn_location
 
-    def see(self, observation: np.ndarray):
-        self.observation = observation
+    def see(self, observation: np.ndarray, mask: np.ndarray = None):
+        self.last_observation = observation
+        self.mask = mask
 
     @abstractmethod
-    def action(self) -> int:
+    def action(self) -> int | np.ndarray:
         raise NotImplementedError()

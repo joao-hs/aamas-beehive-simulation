@@ -1,12 +1,23 @@
-from .agent import Agent
+from bee_colonies.models.queen_bee import QueenBee
+from bee_colonies.models.agent import Agent
+from gym.spaces import Discrete
+
+# 0: stay still, 1: move up, 2: move down, 3: move left, 4: move right, 5: attack
+WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT, WASP_ATTACK, WASP_N_ACTIONS = range(7)
+
+# FINE TUNE ARGUMENTS
+WASP_LIFE_POINTS = 20
+WASP_ATTACK_POWER = 20
+
 
 class Wasp(Agent):
-    def __init__(self, id, initial_health=10):
-        super().__init__(id)
-        self.name = str(id)
-        self.health = 20
+    def __init__(self, id):
+        super().__init__()
+        self.id = id
+        self.health = WASP_LIFE_POINTS
         self.is_alive = True
-        self.attack_power = 1 
+        self.attack_power = WASP_ATTACK_POWER
+        self.action_space = Discrete(WASP_N_ACTIONS)
 
     def receive_damage(self, damage):
         """
@@ -17,23 +28,24 @@ class Wasp(Agent):
         if self.health <= 0:
             self.health = 0  # Ensure health doesn't go negative.
             self.is_alive = False
-            
-    def attack_beehive(self, beehive):
-        """Attacks the specified beehive."""
-        if beehive:
-            beehive.receive_damage(self.attack_power)
 
-    def see(self, observation):
-        return observation
-    
+    def attack_beehive(self, queen_bee: QueenBee):
+        """Attacks the specified beehive."""
+        if queen_bee:
+            queen_bee.receive_damage(self.attack_power)
+
     def action(self) -> int:
-        return super().action()
+        """
+        This method should be implemented by the child class.
+        For testing purposes, it returns a random action.
+        """
+        return self.action_space.sample(mask=self.mask)
 
     def __repr__(self):
         """
         Represent the Wasp object with its ID. If the wasp is not alive, enclose its ID in brackets.
         """
-        rep = f"W{self.name}"
+        rep = f"W{self.id}"
         if not self.is_alive:
             rep = f"[{rep}]"
         return rep
