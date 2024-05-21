@@ -63,6 +63,7 @@ def run_env(env):
         if done:
             doneFor += 1
         agents_observe(env, observations, masks)
+
         env.render()
         print('-' * 20)
 

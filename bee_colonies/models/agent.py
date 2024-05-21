@@ -69,3 +69,8 @@ class Agent(ABC):
     @abstractmethod
     def action(self) -> int | np.ndarray:
         raise NotImplementedError()
+    
+    def distance(self, pos1, pos2) -> int:
+        x1, y1 = pos1
+        x2, y2 = pos2
+        return abs(x1-x2) + abs(y1-y2)

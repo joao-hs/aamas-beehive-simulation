@@ -1,5 +1,7 @@
 import numpy as np
+import numpy as np
 
+from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
 
@@ -52,6 +54,12 @@ class Bee(Agent):
             self.pollen = False
             return True
         return False
+    
+    def see(self, observation):
+        self.observation = observation
+    
+    # def distance(self, pos1, pos2) -> int:
+    #     return super().distance(pos1, pos2)
 
     def __repr__(self):
         rep = f"B{self.queen_id}.{self.local_beehive_id}"
