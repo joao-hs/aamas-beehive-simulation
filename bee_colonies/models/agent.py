@@ -4,6 +4,18 @@ from abc import ABC, abstractmethod
 Coord = tuple[int, int]
 
 
+def apply_mask_to_action(action, mask) -> int | np.ndarray:
+    if mask is None:
+        return action
+    if isinstance(action, int):
+        return action * mask[action]
+    elif isinstance(action, np.ndarray):
+        for m, (index, _) in zip(mask, enumerate(action)):
+            if m == 0 or m == 1:
+                action[index] = m
+    return action
+
+
 class Agent(ABC):
     """
     Base agent class.
