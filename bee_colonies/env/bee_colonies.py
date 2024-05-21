@@ -355,9 +355,17 @@ class BeeColonyEnv(ParallelEnv):
             "position": center,
             "beehives": [beehive_coord for beehive_coord in self.beehive_coordinates if beehive_coord in visible_cells],
             "flowers": [flower_coord for flower_coord in self.flower_coordinates if flower_coord in visible_cells],
-            "bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
+            #"bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
+            "bees": [
+                        {"id": bee.local_beehive_id, "position": self.bee_coordinates[bee.queen_id][bee.local_beehive_id]}
+                        for colony in self.bees_by_colony
+                        for bee in colony
+                        if self.bee_coordinates[bee.queen_id][bee.local_beehive_id] in visible_cells
+                    ],
             "wasps": [wasp_coord for wasp_coord in self.wasp_coordinates if wasp_coord in visible_cells],
         }
+        # print observation{bees}
+        print(observation["bees"])
         return observation
 
     def __update_agent(self, agent: Agent, action: int | np.ndarray):

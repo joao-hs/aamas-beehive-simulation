@@ -55,8 +55,6 @@ class Bee(Agent):
             return True
         return False
     
-    def see(self, observation):
-        self.observation = observation
     
     # def distance(self, pos1, pos2) -> int:
     #     return super().distance(pos1, pos2)
