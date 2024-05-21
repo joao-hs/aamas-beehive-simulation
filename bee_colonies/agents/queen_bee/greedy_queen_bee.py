@@ -1,0 +1,20 @@
+import numpy as np
+
+from bee_colonies.models.agent import apply_mask_to_action
+from bee_colonies.models.queen_bee import QueenBee
+from bee_colonies.models.bee import Bee
+
+
+class GreedyQueenBee(QueenBee):
+    def __init__(self, id: int, bees: list[Bee]):
+        super().__init__(id, bees)
+
+    def action(self) -> np.ndarray:
+        """
+        Unless wasp is nearby, release every bee
+        """
+        if not self.is_alive:
+            return apply_mask_to_action(np.zeros(self.action_space.n, dtype=np.int8), self.mask)
+        if len(self.last_observation["wasps"]) != 0:
+            return apply_mask_to_action(np.ones(self.action_space.n, dtype=np.int8), self.mask)
+        return apply_mask_to_action(np.zeros(self.action_space.n, dtype=np.int8), self.mask)
