@@ -12,6 +12,8 @@ COLORS = {
     "B": (255, 255, 0)  # yellow
 }
 
+TICK_RATE = 60
+
 
 class Grid:
     def __init__(self, width, height):
@@ -50,4 +52,4 @@ class Grid:
         # with np.printoptions(threshold=np.inf):
         #     for row in self.grid:
         #         print(" ".join(row))
-        self.clock.tick(60)
+        self.clock.tick(TICK_RATE)

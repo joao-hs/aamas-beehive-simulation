@@ -172,7 +172,7 @@ class BeeColonyEnv(ParallelEnv):
         # all can do all
         # go through each and exclude non-possible actions
         # bee and queen
-        masks = self.init_masks()
+        masks = self.permissive_masks()
 
         for queen_bee in self.queen_bees:
             for i, presence in enumerate(queen_bee.presence_array):
@@ -229,19 +229,48 @@ class BeeColonyEnv(ParallelEnv):
 
     ## Helper functions
 
-    def init_masks(self):
+    def permissive_masks(self):
         return (
             [  # 2 in a multi binary action space means any action is possible
-                2 * np.ones(queen_bee.action_space.n, dtype=np.int8) for queen_bee in self.queen_bees
+                2 * np.ones(queen_bee.action_space.n, dtype=np.int8) \
+                if queen_bee.is_alive \
+                else np.zeros(queen_bee.action_space.n, dtype=np.int8) \
+                for queen_bee in self.queen_bees
             ],
             tuple(  # 1 in a discrete action space means the action is possible
-                [np.ones(bee.action_space.n, dtype=np.int8) \
-                 if bee.is_alive \
-                 else np.zeros(bee.action_space.n, dtype=np.int8) \
-                 for bee in colony] for colony in self.bees_by_colony
+                [
+                    np.ones(bee.action_space.n, dtype=np.int8) \
+                    if bee.is_alive \
+                    else np.zeros(bee.action_space.n, dtype=np.int8) \
+                    for bee in colony
+                ] for colony in self.bees_by_colony
             ),
             [  # 1 in a discrete action space means the action is possible
-                np.ones(wasp.action_space.n, dtype=np.int8) for wasp in self.wasps
+                np.ones(wasp.action_space.n, dtype=np.int8) \
+                if wasp.is_alive \
+                else np.zeros(wasp.action_space.n, dtype=np.int8) \
+                for wasp in self.wasps
+            ]
+        )
+
+    def init_masks(self):
+        def no_move(n):
+            mask = np.zeros(n, dtype=np.int8)
+            mask[0] = 1  # assuming 0 means stay
+            return mask
+
+        return (
+            [  # 2 in a multi binary action space means any action is possible
+                2 * np.ones(queen_bee.action_space.n, dtype=np.int8) \
+                for queen_bee in self.queen_bees
+            ],
+            tuple(
+                [
+                    no_move(bee.action_space.n) for bee in colony
+                ] for colony in self.bees_by_colony
+            ),
+            [
+                no_move(wasp.action_space.n) for wasp in self.wasps
             ]
         )
 
