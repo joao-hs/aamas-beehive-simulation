@@ -16,6 +16,10 @@ def apply_mask_to_action(action, mask) -> int | np.ndarray:
     return action
 
 
+def manhattan_distance(coord1: Coord, coord2: Coord):
+    return abs(coord1[0] - coord2[0]) + abs(coord1[1] - coord2[1])
+
+
 class Agent(ABC):
     """
     Base agent class.

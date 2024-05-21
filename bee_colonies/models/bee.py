@@ -1,3 +1,5 @@
+import numpy as np
+
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
 
@@ -11,19 +13,26 @@ BEE_ATTACK_POWER = 2
 
 
 class Bee(Agent):
-    def __init__(self, beehive_id, local_beehive_id):
+    def __init__(self, local_beehive_id):
         super().__init__()
         self.beehive_location = None
         self.is_alive = True
         self.pollen = False  # Indicates if the bee is carrying pollen.
-        self.beehive_id = beehive_id
+        self.queen_id = None
+        self.queen = None
         self.local_beehive_id = local_beehive_id
         self.attack_power = BEE_ATTACK_POWER
         self.action_space = Discrete(BEE_N_ACTIONS)
 
+    def set_queen(self, queen):
+        self.queen_id = queen.id
+        self.queen = queen
+        self.set_spawn(queen.spawn_location)
+        self.beehive_location = self.spawn_location
+
     def set_spawn(self, spawn_location: Coord):
+        super().set_spawn(spawn_location)
         self.beehive_location = spawn_location
-        return super().set_spawn(spawn_location)
 
     def action(self) -> int:
         """
@@ -45,9 +54,37 @@ class Bee(Agent):
         return False
 
     def __repr__(self):
-        rep = f"B{self.beehive_id}.{self.local_beehive_id}"
+        rep = f"B{self.queen_id}.{self.local_beehive_id}"
         if not self.is_alive:
             rep = f"[{rep}]"
         else:
             rep += "<>" if self.pollen else ""
         return rep
+
+
+def move_towards(src: Coord, dest: Coord):
+    x1, y1 = src
+    x2, y2 = dest
+    dx, dy = x2 - x1, y2 - y1
+
+    if dx == 0 and dy == 0:
+        return BEE_STAY
+    if dx > dy:
+        return BEE_DOWN if dx > 0 else BEE_UP
+    else:
+        return BEE_RIGHT if dy > 0 else BEE_LEFT
+
+
+def move_away(src: Coord, away: Coord):
+    x1, y1 = src
+    x2, y2 = away
+    dx, dy = x2 - x1, y2 - y1
+
+    if dx > dy:
+        return BEE_UP if dx > 0 else BEE_DOWN
+    else:
+        return BEE_LEFT if dy > 0 else BEE_LEFT
+
+
+def random_walk():
+    return np.random.choice([BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT])

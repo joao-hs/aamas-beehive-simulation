@@ -27,6 +27,8 @@ class QueenBee(Agent):
         self.mask = None
         self.action_space = MultiBinary(n_bees)
         self.health_tendency_counter = 0
+        # used by social bees
+        self.pursuing_flower_set = set()
 
     def action(self) -> np.ndarray:
         """
@@ -72,8 +74,8 @@ class QueenBee(Agent):
         if self.health_tendency_counter >= TENDENCY_THRESHOLD:
             print(f"Queen Bee {self.id} is in good health. Reproducing.")
             self.presence_array = np.append(self.presence_array, 1)
-            new_bee = Bee(self.id, total_no_bees)
-            new_bee.set_spawn(self.spawn_location)
+            new_bee = Bee(total_no_bees)
+            new_bee.set_queen(self)
             self.action_space = MultiBinary(total_no_bees+1)
             self.alive_bees += 1
             return new_bee, True

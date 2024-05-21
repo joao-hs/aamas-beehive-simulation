@@ -130,7 +130,7 @@ class BeeColonyEnv(ParallelEnv):
             self.beehive_coordinates.append(new_location)
 
         self.bee_coordinates = tuple(
-            [self.beehive_coordinates[bee.beehive_id] for bee in queen_bee.bees] for queen_bee in self.queen_bees
+            [self.beehive_coordinates[bee.queen_id] for bee in queen_bee.bees] for queen_bee in self.queen_bees
         )  # bees start at their respective beehives
 
         self.wasp_coordinates = [
@@ -143,7 +143,7 @@ class BeeColonyEnv(ParallelEnv):
 
         for colony in self.bees_by_colony:
             for bee in colony:
-                bee.set_spawn(self.beehive_coordinates[bee.beehive_id])
+                bee.set_spawn(self.beehive_coordinates[bee.queen_id])
 
         for wasp in self.wasps:
             wasp.set_spawn(self.wasp_coordinates[wasp.id])
@@ -190,13 +190,18 @@ class BeeColonyEnv(ParallelEnv):
                 if position not in self.wasp_coordinates:
                     masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 0
                 if position == bee.beehive_location:
-                    if self.queen_bees[bee.beehive_id].presence_array[bee.local_beehive_id] == 1:
-                        # cannot move
+                    if bee.pollen:
+                        self.queen_bees[bee.queen_id].presence_array[bee.local_beehive_id] = 1
                         masks[1][colony][bee.local_beehive_id] = np.zeros(bee.action_space.n, dtype=np.int8)
-                        masks[1][colony][bee.local_beehive_id][BEE_STAY] = 1
+                        masks[1][colony][bee.local_beehive_id][BEE_DROP] = 1
                     else:
-                        # needs to move out of the beehive
-                        masks[1][colony][bee.local_beehive_id][BEE_STAY] = 0
+                        if self.queen_bees[bee.queen_id].presence_array[bee.local_beehive_id] == 1:
+                            # cannot move
+                            masks[1][colony][bee.local_beehive_id] = np.zeros(bee.action_space.n, dtype=np.int8)
+                            masks[1][colony][bee.local_beehive_id][BEE_STAY] = 1
+                        else:
+                            # needs to move out of the beehive
+                            masks[1][colony][bee.local_beehive_id][BEE_STAY] = 0
         for wasp in self.wasps:
             position = self.wasp_coordinates[wasp.id]
             if position not in self.beehive_coordinates:
@@ -333,7 +338,7 @@ class BeeColonyEnv(ParallelEnv):
         if isinstance(agent, QueenBee):
             center: Coord = agent.spawn_location
         elif isinstance(agent, Bee):
-            center: Coord = self.bee_coordinates[agent.beehive_id][agent.local_beehive_id]
+            center: Coord = self.bee_coordinates[agent.queen_id][agent.local_beehive_id]
         elif isinstance(agent, Wasp):
             center: Coord = self.wasp_coordinates[agent.id]
         else:
@@ -347,6 +352,7 @@ class BeeColonyEnv(ParallelEnv):
         ]
 
         observation = {
+            "position": center,
             "beehives": [beehive_coord for beehive_coord in self.beehive_coordinates if beehive_coord in visible_cells],
             "flowers": [flower_coord for flower_coord in self.flower_coordinates if flower_coord in visible_cells],
             "bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
@@ -362,26 +368,26 @@ class BeeColonyEnv(ParallelEnv):
             picked_bee, is_new = agent.timestep()
             if picked_bee:
                 if is_new:
-                    if picked_bee not in self.bees_by_colony[picked_bee.beehive_id]:
-                        self.bees_by_colony[picked_bee.beehive_id].append(picked_bee)
-                    self.bee_coordinates[picked_bee.beehive_id].append(picked_bee.beehive_location)
+                    if picked_bee not in self.bees_by_colony[picked_bee.queen_id]:
+                        self.bees_by_colony[picked_bee.queen_id].append(picked_bee)
+                    self.bee_coordinates[picked_bee.queen_id].append(picked_bee.beehive_location)
                 else:
                     # self.bees_by_colony[picked_bee.beehive_id].remove(picked_bee)
                     picked_bee.is_alive = False
-                    self.bee_coordinates[picked_bee.beehive_id][picked_bee.local_beehive_id] = picked_bee.beehive_location
+                    self.bee_coordinates[picked_bee.queen_id][picked_bee.local_beehive_id] = picked_bee.beehive_location
         elif isinstance(agent, Bee):
-            position: Coord = self.bee_coordinates[agent.beehive_id][agent.local_beehive_id]
+            position: Coord = self.bee_coordinates[agent.queen_id][agent.local_beehive_id]
             x, y = position
             if action == BEE_STAY:
                 return
             elif action == BEE_UP:  # move up
-                self.bee_coordinates[agent.beehive_id][agent.local_beehive_id] = self.__clamp_coord((x - 1, y))
+                self.bee_coordinates[agent.queen_id][agent.local_beehive_id] = self.__clamp_coord((x - 1, y))
             elif action == BEE_DOWN:  # move down
-                self.bee_coordinates[agent.beehive_id][agent.local_beehive_id] = self.__clamp_coord((x + 1, y))
+                self.bee_coordinates[agent.queen_id][agent.local_beehive_id] = self.__clamp_coord((x + 1, y))
             elif action == BEE_LEFT:  # move left
-                self.bee_coordinates[agent.beehive_id][agent.local_beehive_id] = self.__clamp_coord((x, y - 1))
+                self.bee_coordinates[agent.queen_id][agent.local_beehive_id] = self.__clamp_coord((x, y - 1))
             elif action == BEE_RIGHT:  # move right
-                self.bee_coordinates[agent.beehive_id][agent.local_beehive_id] = self.__clamp_coord((x, y + 1))
+                self.bee_coordinates[agent.queen_id][agent.local_beehive_id] = self.__clamp_coord((x, y + 1))
 
             elif action == BEE_ATTACK:  # attack wasp
                 for wasp in self.wasps:
@@ -399,7 +405,7 @@ class BeeColonyEnv(ParallelEnv):
             elif action == BEE_DROP:  # drop / enter beehive
                 # Assuming you need to check if the bee is at its beehive location
                 if position == agent.beehive_location:
-                    queen_bee: QueenBee = self.queen_bees[agent.beehive_id]
+                    queen_bee: QueenBee = self.queen_bees[agent.queen_id]
                     if agent.drop_pollen():
                         queen_bee.receive_polen()
                     queen_bee.welcome(agent)

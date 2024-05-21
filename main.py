@@ -45,22 +45,7 @@ def compute_actions(env):
     return actions
 
 
-def main():
-    queen_bees: list[QueenBee] = [
-        QueenBee(id=colony, bees=[
-            Bee(beehive_id=colony, local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
-        ]) for colony in range(N_COLONIES)
-    ]
-
-    bees: tuple[list[Bee], ...] = tuple(
-        queen_bee.bees for queen_bee in queen_bees
-    )
-
-    wasps: list[Wasp] = [Wasp(i) for i in range(N_WASPS)]
-
-    env = BeeColonyEnv(queen_bees, bees, wasps, seed=SEED, grid_shape=(100, 100), n_wasps=N_WASPS,
-                       n_bees_per_colony=N_BEES_PER_COLONY, flower_density=FLOWER_PROB,
-                       range_of_vision=VISION, max_steps=MAX_STEPS)
+def run_env(env):
     observations = env.reset()
 
     masks = env.init_masks()
@@ -80,6 +65,29 @@ def main():
         agents_observe(env, observations, masks)
         env.render()
         print('-' * 20)
+
+
+def main():
+    queen_bees: list[QueenBee] = [
+        QueenBee(id=colony, bees=[
+            Bee(local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
+        ]) for colony in range(N_COLONIES)
+    ]
+
+    bees: tuple[list[Bee], ...] = tuple(
+        queen_bee.bees for queen_bee in queen_bees
+    )
+
+    for colony, colony_bees in enumerate(bees):
+        for bee in colony_bees:
+            bee.set_queen(queen_bees[colony])
+
+    wasps: list[Wasp] = [Wasp(i) for i in range(N_WASPS)]
+
+    env = BeeColonyEnv(queen_bees, bees, wasps, seed=SEED, grid_shape=(100, 100), n_wasps=N_WASPS,
+                       n_bees_per_colony=N_BEES_PER_COLONY, flower_density=FLOWER_PROB,
+                       range_of_vision=VISION, max_steps=MAX_STEPS)
+    run_env(env)
     env.close()
 
 
