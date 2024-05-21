@@ -2,7 +2,6 @@ from bee_colonies.env.bee_colonies import BeeColonyEnv
 from bee_colonies.models.agent import Agent
 from pygame import event, QUIT, quit
 from copy import copy
-from time import sleep
 import numpy as np
 
 from bee_colonies.models.bee import Bee
@@ -20,6 +19,7 @@ N_WASPS = 50
 FLOWER_PROB = 0.1
 VISION = 2
 MAX_STEPS = 1000
+TIMESTEPS_AFTER_DONE = 5
 
 if __name__ == "__main__":
     queen_bees: list[QueenBee] = [
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     for wasp in env.wasps:
         wasp.see(wasps_obs[wasp.id], mask=masks[2][wasp.id])
 
-    done = False
-    while not done:
+    doneFor = 0
+    while doneFor < TIMESTEPS_AFTER_DONE:
         for e in event.get():
             if e.type == QUIT:
                 quit()
@@ -66,6 +66,8 @@ if __name__ == "__main__":
             wasp: wasp.action() for wasp in env.wasps
         })
         observations, rewards, masks, done, truncations = env.step(actions)
+        if done:
+            doneFor += 1
         queen_bees_obs, bees_obs, wasps_obs = observations
         for queen_bee in env.queen_bees:
             queen_bee.see(queen_bees_obs[queen_bee.id], mask=masks[0][queen_bee.id])

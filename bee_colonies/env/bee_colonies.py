@@ -180,6 +180,10 @@ class BeeColonyEnv(ParallelEnv):
                     masks[0][queen_bee.id][i] = 0
         for colony, colony_bees in enumerate(self.bees_by_colony):
             for bee in colony_bees:
+                if not bee.is_alive:
+                    # hack: put them in their beehive if they're dead
+                    self.bee_coordinates[colony][bee.local_beehive_id] = bee.beehive_location
+                    continue
                 position: Coord = self.bee_coordinates[colony][bee.local_beehive_id]
                 if position not in self.flower_coordinates:
                     masks[1][colony][bee.local_beehive_id][BEE_PICK] = 0
@@ -231,7 +235,10 @@ class BeeColonyEnv(ParallelEnv):
                 2 * np.ones(queen_bee.action_space.n, dtype=np.int8) for queen_bee in self.queen_bees
             ],
             tuple(  # 1 in a discrete action space means the action is possible
-                [np.ones(bee.action_space.n, dtype=np.int8) for bee in colony] for colony in self.bees_by_colony
+                [np.ones(bee.action_space.n, dtype=np.int8) \
+                 if bee.is_alive \
+                 else np.zeros(bee.action_space.n, dtype=np.int8) \
+                 for bee in colony] for colony in self.bees_by_colony
             ),
             [  # 1 in a discrete action space means the action is possible
                 np.ones(wasp.action_space.n, dtype=np.int8) for wasp in self.wasps
@@ -330,7 +337,8 @@ class BeeColonyEnv(ParallelEnv):
                         self.bees_by_colony[picked_bee.beehive_id].append(picked_bee)
                     self.bee_coordinates[picked_bee.beehive_id].append(picked_bee.beehive_location)
                 else:
-                    self.bees_by_colony[picked_bee.beehive_id].remove(picked_bee)
+                    # self.bees_by_colony[picked_bee.beehive_id].remove(picked_bee)
+                    picked_bee.is_alive = False
                     self.bee_coordinates[picked_bee.beehive_id][picked_bee.local_beehive_id] = picked_bee.beehive_location
         elif isinstance(agent, Bee):
             position: Coord = self.bee_coordinates[agent.beehive_id][agent.local_beehive_id]
