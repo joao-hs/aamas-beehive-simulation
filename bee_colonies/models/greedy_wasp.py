@@ -1,36 +1,36 @@
 from bee_colonies.env.bee_colonies import WASP_DOWN, WASP_UP, WASP_RIGHT, WASP_LEFT, WASP_STAY
 from bee_colonies.models.wasp import Wasp
-
+import numpy as np
 
 class GreedyWasp(Wasp):
-    def __init__(self, id, attack_power=1):
-        super().__init__(id, attack_power)
-        self.target_beehive = None  # Initially, no target is selected.
+    def __init__(self, id, vision_range=5, initial_health=20):
+        super().__init__(id, initial_health=initial_health)
+        self.vision_range = vision_range  # Defines how far the wasp can see a beehive
+    
+    def action(self) -> int:
+        # If the wasp can see a beehive, it will choose an action to move towards or attack the beehive
+        beehive_location = self._find_nearest_beehive()
+        if beehive_location:
+            return self._move_towards_beehive(beehive_location)
+        else:
+            # Move randomly if no beehive is visible
+            return np.random.choice([WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT])
+    
+    def _find_nearest_beehive(self):
+        # This method would check the observation to find the nearest beehive within the vision range
+        for dx in range(-self.vision_range, self.vision_range + 1):
+            for dy in range(-self.vision_range, self.vision_range + 1):
+                check_pos = (self.spawn_location[0] + dx, self.spawn_location[1] + dy)
+                if check_pos in self.observation['beehives']:  # Assuming observation includes beehive positions
+                    return check_pos
+        return None
 
-    def select_target(self, beehive_coordinates):
-        # This method selects the nearest beehive as the target
-        if not beehive_coordinates:
-            return None
-        self.target_beehive = min(beehive_coordinates, key=lambda x: self.__distance(self.position, x))
-        return self.target_beehive
-
-    def action(self, beehive_coordinates):
-        # Determines the next action towards the selected target
-        if not self.target_beehive or self.target_beehive not in beehive_coordinates:
-            self.select_target(beehive_coordinates)
-
-        # Example decision process to move towards the target
-        target_x, target_y = self.target_beehive
-        x, y = self.position
-        if x < target_x:
-            return WASP_DOWN
-        elif x > target_x:
-            return WASP_UP
-        elif y < target_y:
-            return WASP_RIGHT
-        elif y > target_y:
-            return WASP_LEFT
-        return WASP_STAY  # Default to staying still if already at the target
-
-    def __distance(self, pos1, pos2):
-        return ((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)**0.5
+    def _move_towards_beehive(self, beehive_location):
+        # Decide the best action to move towards the beehive
+        x_diff = beehive_location[0] - self.spawn_location[0]
+        y_diff = beehive_location[1] - self.spawn_location[1]
+        
+        if abs(x_diff) > abs(y_diff):
+            return WASP_DOWN if x_diff > 0 else WASP_UP
+        else:
+            return WASP_RIGHT if y_diff > 0 else WASP_LEFT
