@@ -29,6 +29,14 @@ class GreedyWasp(Wasp):
             return apply_mask_to_action(self.searching_guide.walk(self.last_observation["position"]), self.mask)
     
     def _find_nearest_beehive(self):
-        # This method would check the observation to find the nearest beehive within the vision range
-        self.last_observation["beehives"].sort(key=lambda x: manhattan_distance(self.last_observation["position"], x))
-        return self.last_observation["beehives"][0] if self.last_observation["beehives"] else None
+        # Filter the list to include only alive beehives before sorting
+        alive_beehives = [
+            beehive for beehive, is_alive in self.last_observation["beehives"] if is_alive
+        ]
+        
+        if not alive_beehives:
+            return None  # Return None if there are no alive beehives
+        
+        # Now sort the alive beehives by their distance from the wasp's current position
+        alive_beehives.sort(key=lambda x: manhattan_distance(self.last_observation["position"], x))
+        return alive_beehives[0]  # Return the nearest alive beehive

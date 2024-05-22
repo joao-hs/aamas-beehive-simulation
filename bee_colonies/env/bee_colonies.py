@@ -401,7 +401,11 @@ class BeeColonyEnv(ParallelEnv):
 
         observation = {
             "position": center,
-            "beehives": [beehive_coord for beehive_coord in self.beehive_coordinates if beehive_coord in visible_cells],
+            "beehives": [ 
+                        (beehive_coord, self.queen_bees[index].is_alive)  
+                        for index, beehive_coord in enumerate(self.beehive_coordinates)
+                        if beehive_coord in visible_cells
+                        ],
             "flowers": [flower for flower in self.flowers.values() if flower.position in visible_cells],
             "bees": [
                 (colony, i, bee_coord)
