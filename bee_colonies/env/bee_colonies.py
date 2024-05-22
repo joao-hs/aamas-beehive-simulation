@@ -202,7 +202,11 @@ class BeeColonyEnv(ParallelEnv):
                     masks[1][colony][bee.local_beehive_id][BEE_PICK] = 0
                 if position not in self.wasp_coordinates:
                     masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 0
+                
                 if position == bee.beehive_location:
+                    if position in self.wasp_coordinates:
+                        masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 1
+                        continue
                     if bee.pollen:
                         self.queen_bees[bee.queen_id].presence_array[bee.local_beehive_id] = 1
                         masks[1][colony][bee.local_beehive_id] = np.zeros(bee.action_space.n, dtype=np.int8)
@@ -215,6 +219,7 @@ class BeeColonyEnv(ParallelEnv):
                         else:
                             # needs to move out of the beehive
                             masks[1][colony][bee.local_beehive_id][BEE_STAY] = 0
+                    
         for wasp in self.wasps:
             if not wasp.is_alive:
                 continue
@@ -460,9 +465,13 @@ class BeeColonyEnv(ParallelEnv):
                         continue
                     wasp_position = self.wasp_coordinates[wasp.id]
                     if position == wasp_position:
-                        wasp.receive_damage(agent.attack_power)
+                        if wasp.health > 0:
+                            wasp.receive_damage(agent.attack_power)
+                        else:
+                            wasp.is_alive = False
+                            
                         if not wasp.is_alive:
-                            self.wasp_coordinates.remove(wasp_position)
+                            self.wasp_coordinates[wasp.id] = self.__random_available_position()
                         break
 
             elif action == BEE_PICK:  # pick up pollen
@@ -495,16 +504,12 @@ class BeeColonyEnv(ParallelEnv):
             elif action == WASP_RIGHT:
                 self.wasp_coordinates[agent.id] = self.__clamp_coord((x, y + 1))
             elif action == WASP_ATTACK:
-                print("Wasp attacking")
                 for queen_bee_id, beehive in enumerate(self.beehive_coordinates):
                     if position == beehive:
                         if self.queen_bees[queen_bee_id].is_alive:
                             self.queen_bees[queen_bee_id].receive_damage(agent.attack_power)
                             # After attack, choose to move randomly or to a strategic position
-                            print("Queen Bee attacked by Wasp")
                         else:
-                            print("Queen Bee is already dead")
-                            # delete queen_bee from observation
                             self.queen_bees[queen_bee_id].is_alive = False
                             new_position = self.__find_new_position_after_attack(agent.id)
                             self.wasp_coordinates[agent.id] = new_position
