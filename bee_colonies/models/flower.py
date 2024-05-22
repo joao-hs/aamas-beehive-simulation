@@ -25,6 +25,8 @@ class Flower:
                 self.pollen = True
                 self.counter = 0
 
+    def __repr__(self):
+        return f"{self.position[0]},{self.position[1]}{'*' if self.pollen else ''}"
 
 def generate_flowers(grid_shape: Coord, flower_density: float, hotspots: tuple[Coord, ...]) -> list[Coord]:
     flower_coordinates = set()

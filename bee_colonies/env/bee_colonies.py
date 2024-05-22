@@ -53,8 +53,8 @@ class BeeColonyEnv(ParallelEnv):
         - flower_density: 0.5 (probability of a flower being present in a cell)
         - max_steps: 1000
         """
-        self._seed = seed
-        configure_seed(self._seed)
+        self.seed = seed
+        configure_seed(self.seed)
 
         # Sizes
         self._grid_shape = grid_shape
@@ -216,6 +216,8 @@ class BeeColonyEnv(ParallelEnv):
                             # needs to move out of the beehive
                             masks[1][colony][bee.local_beehive_id][BEE_STAY] = 0
         for wasp in self.wasps:
+            if not wasp.is_alive:
+                continue
             position = self.wasp_coordinates[wasp.id]
             if position not in self.beehive_coordinates:
                 masks[2][wasp.id][WASP_ATTACK] = 0
@@ -379,6 +381,8 @@ class BeeColonyEnv(ParallelEnv):
         return None
 
     def __observation(self, agent: Agent):
+        if not agent.is_alive:
+            return self.__empty_obs()
         if isinstance(agent, QueenBee):
             center: Coord = agent.spawn_location
         elif isinstance(agent, Bee):
@@ -399,10 +403,23 @@ class BeeColonyEnv(ParallelEnv):
             "position": center,
             "beehives": [beehive_coord for beehive_coord in self.beehive_coordinates if beehive_coord in visible_cells],
             "flowers": [flower for flower in self.flowers.values() if flower.position in visible_cells],
-            "bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
+            "bees": [
+                (colony, i, bee_coord)
+                for colony, colony_coords in enumerate(self.bee_coordinates)
+                for i, bee_coord in enumerate(colony_coords) if bee_coord in visible_cells
+            ],
             "wasps": [wasp_coord for wasp_coord in self.wasp_coordinates if wasp_coord in visible_cells],
         }
         return observation
+
+    def __empty_obs(self):
+        return {
+            "position": None,
+            "beehives": [],
+            "flowers": [],
+            "bees": [],
+            "wasps": [],
+        }
 
     def __update_agent(self, agent: Agent, action: int | np.ndarray):
         if not agent.is_alive:
@@ -435,6 +452,8 @@ class BeeColonyEnv(ParallelEnv):
 
             elif action == BEE_ATTACK:  # attack wasp
                 for wasp in self.wasps:
+                    if not wasp.is_alive:
+                        continue
                     wasp_position = self.wasp_coordinates[wasp.id]
                     if position == wasp_position:
                         wasp.receive_damage(agent.attack_power)

@@ -7,14 +7,14 @@ from bee_colonies.models.agent import apply_mask_to_action
 from bee_colonies.models.queen_bee import QueenBee, HEALTH_SCORE_FUNCTION, IS_GOOD_HEALTH, IS_BAD_HEALTH
 from bee_colonies.models.bee import Bee
 
-GOOD_HEALTH_BEE_PERCENT = 10
-OK_HEALTH_BEE_PERCENT = 25
-BAD_HEALTH_BEE_PERCENT = 50
+KEEP_RATIO_GOOD_HEALTH = 25
+KEEP_RATIO_OK_HEALTH = 15
+KEEP_RATIO_BAD_HEALTH = 5
 
 
 class ConsiderateQueenBee(QueenBee):
-    def __init__(self, id: int, bees: list[Bee]):
-        super().__init__(id, bees)
+    def __init__(self, id: int, bees: list[Bee], new_bee_class):
+        super().__init__(id, bees, new_bee_class)
 
     def action(self) -> np.ndarray:
         """
@@ -29,15 +29,21 @@ class ConsiderateQueenBee(QueenBee):
             return apply_mask_to_action(np.ones(self.action_space.n, dtype=np.int8), self.mask)
         health_score = HEALTH_SCORE_FUNCTION(self.food_quantity, self.alive_bees)
         if IS_GOOD_HEALTH(health_score):
-            return apply_mask_to_action(self.__release_x_percent(GOOD_HEALTH_BEE_PERCENT), self.mask)
+            return apply_mask_to_action(self.__keep_at_least(KEEP_RATIO_GOOD_HEALTH), self.mask)
         elif IS_BAD_HEALTH(health_score):
-            return apply_mask_to_action(self.__release_x_percent(BAD_HEALTH_BEE_PERCENT), self.mask)
+            return apply_mask_to_action(self.__keep_at_least(KEEP_RATIO_BAD_HEALTH), self.mask)
         else:
-            return apply_mask_to_action(self.__release_x_percent(OK_HEALTH_BEE_PERCENT), self.mask)
+            return apply_mask_to_action(self.__keep_at_least(KEEP_RATIO_OK_HEALTH), self.mask)
 
-    def __release_x_percent(self, x: int):
+    def __keep_at_least(self, x: int):
         action = copy(self.presence_array)
         no_inside_bees = (action == 1).sum()
-        count = min(math.ceil(no_inside_bees * x / 10), no_inside_bees)
-        action[np.random.choice(np.where(action == 1)[0], count, replace=False)] = 0
-        return action
+        inside_ratio = no_inside_bees / self.alive_bees
+        diff = inside_ratio - x / 100
+        if diff > 0:
+            # release
+            count = min(math.floor(diff * self.alive_bees), no_inside_bees)
+            action[np.random.choice(np.where(action == 1)[0], count, replace=False)] = 0
+            return action
+        # keep
+        return np.ones(self.presence_array.size)

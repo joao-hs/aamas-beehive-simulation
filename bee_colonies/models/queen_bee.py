@@ -1,4 +1,4 @@
-from bee_colonies.models.bee import Bee
+from bee_colonies.models.bee import Bee, BEE_STAY, BEE_ATTACK
 from bee_colonies.models.agent import Agent
 import numpy as np
 from gym.spaces import MultiBinary
@@ -14,7 +14,7 @@ HEALTH_SCORE_FUNCTION = lambda food_quantity, no_bees: food_quantity // no_bees 
 
 
 class QueenBee(Agent):
-    def __init__(self, id: int, bees: list[Bee]):
+    def __init__(self, id: int, bees: list[Bee], new_bee_class):
         super().__init__()
         n_bees = len(bees)
         self.id = id
@@ -28,6 +28,7 @@ class QueenBee(Agent):
         self.mask = None
         self.action_space = MultiBinary(n_bees)
         self.health_tendency_counter = 0
+        self.new_bee = new_bee_class
         # used by social bees
         self.pursuing_flower_map = dict()
         self.section_size = None
@@ -74,7 +75,7 @@ class QueenBee(Agent):
             self.health_tendency_counter = 0
         if self.health_tendency_counter >= TENDENCY_THRESHOLD:
             self.presence_array = np.append(self.presence_array, 1)
-            new_bee = Bee(total_no_bees)
+            new_bee = self.new_bee(total_no_bees)
             new_bee.set_queen(self)
             self.action_space = MultiBinary(total_no_bees + 1)
             self.alive_bees += 1
@@ -88,6 +89,9 @@ class QueenBee(Agent):
         return None, False
 
     def welcome(self, bee: Bee):
+        bee.mask = np.zeros(bee.action_space.n)
+        bee.mask[BEE_STAY] = 1
+        bee.mask[BEE_ATTACK] = 1
         self.presence_array[bee.local_beehive_id] = 1
 
     def __purge_bees(self):

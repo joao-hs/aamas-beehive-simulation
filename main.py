@@ -4,7 +4,7 @@ from bee_colonies.agents.bee.social_bee import SocialBee
 from bee_colonies.agents.queen_bee.conservative_queen_bee import ConservativeQueenBee
 from bee_colonies.agents.queen_bee.considerate_queen_bee import ConsiderateQueenBee
 from bee_colonies.agents.wasp.greedy_wasp import GreedyWasp
-from bee_colonies.env.bee_colonies import BeeColonyEnv
+from bee_colonies.env.bee_colonies import BeeColonyEnv, configure_seed
 from bee_colonies.models.agent import Agent
 from pygame import event, QUIT, quit
 import numpy as np
@@ -27,7 +27,7 @@ NUM_FLOWER_CLUSTERS = 2
 MAX_DISTANCE_FROM_CLUSTER = 25
 MAX_STEPS = 1000
 TIMESTEPS_AFTER_DONE = 5
-
+FAIR_TESTING = True
 
 def agents_observe(env, observations, masks):
     queen_bees_obs, bees_obs, wasps_obs = observations
@@ -79,9 +79,14 @@ def run_env(env):
 
 def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
     queen_bees: list[QueenBee] = [
-        queen_bee_classes[colony](id=colony, bees=[
-            bee_classes[colony](local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
-        ]) for colony in range(N_COLONIES)
+        queen_bee_classes[colony](
+            id=colony,
+            bees=[
+                bee_classes[colony](local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
+            ],
+            new_bee_class=bee_classes[colony]
+        ) for colony in range(N_COLONIES)
+
     ]
 
     bees: tuple[list[Bee], ...] = tuple(
@@ -101,7 +106,6 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
     return env
 
 
-
 def main():
     environments = [
         create_scenario([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
@@ -111,6 +115,8 @@ def main():
     ]
 
     for env in environments:
+        if FAIR_TESTING:
+            configure_seed(env.seed)
         run_env(env)
         env.close()
 

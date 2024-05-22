@@ -6,8 +6,8 @@ from bee_colonies.models.queen_bee import QueenBee, HEALTH_SCORE_FUNCTION, IS_GO
 
 
 class ConservativeQueenBee(QueenBee):
-    def __init__(self, id: int, bees: list[Bee]):
-        super().__init__(id, bees)
+    def __init__(self, id: int, bees: list[Bee], new_bee_class):
+        super().__init__(id, bees, new_bee_class)
 
     def action(self) -> np.ndarray:
         """

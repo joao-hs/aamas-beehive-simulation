@@ -48,7 +48,7 @@ class SocialBee(Bee):
                 return apply_mask_to_action(BEE_PICK, self.mask)
             return apply_mask_to_action(move_towards(position, self.target_flower.position), self.mask)
 
-        visible_flowers = self.last_observation["flowers"]
+        visible_flowers = list(filter(lambda x: x.pollen, self.last_observation["flowers"]))
         if len(visible_flowers) == 0:
             return apply_mask_to_action(self.search_for_flowers(position), self.mask)
 
