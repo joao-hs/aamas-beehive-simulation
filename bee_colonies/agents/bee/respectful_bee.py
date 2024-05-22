@@ -1,22 +1,36 @@
-from bee_colonies.models.bee import BEE_STAY, Bee, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT
+from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
+from bee_colonies.models.bee import BEE_ATTACK, BEE_N_ACTIONS, BEE_STAY, Bee, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, move_towards
 import numpy as np
+
+from bee_colonies.models.searching_guide import SearchingGuide
+
+RANDOM_WALK_INTENT = 3
 
 
 class RespectfulBee(Bee):
-    def __init__(self, id, queen_id, local_beehive_id):
-        super().__init__(id, queen_id, local_beehive_id)
+    def __init__(self, local_beehive_id):
+        super().__init__(local_beehive_id)
+        self.searching_guide = SearchingGuide([BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT], RANDOM_WALK_INTENT)
 
-    def action(self, observation) -> int:
+    def action(self) -> int:
+        # Always prioritize attacking
+        if self.mask[BEE_ATTACK] == 1:
+            return apply_mask_to_action(BEE_ATTACK, self.mask)
+
+        stay = np.zeros(BEE_N_ACTIONS)
+        stay[BEE_STAY] = 1
+        if np.array_equal(self.mask, stay):
+            return BEE_STAY
+
         # Find the closest flower that this bee can claim
-        flower_position, can_claim = self._find_flower_to_claim(observation)
+        flower_position, can_claim = self._find_flower_to_claim(self.last_observation)
 
         if can_claim and flower_position:
             # If a flower is claimable, determine the move to get there
-            return self._move_towards(flower_position)
+            return apply_mask_to_action(move_towards(self.last_observation["position"], flower_position), self.mask)
         else:
             # Continue searching randomly or perform other behaviors
-            return np.random.choice([BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT])
-        
+            return apply_mask_to_action(self.searching_guide.walk(self.last_observation["position"]), self.mask)
 
     def _find_flower_to_claim(self, observation):
         my_position = self.spawn_location
@@ -25,15 +39,15 @@ class RespectfulBee(Bee):
         can_claim = True
 
         for flower in observation['flowers']:
-            flower_pos = flower  # Assuming each flower is a coordinate
-            distance = self.__distance(my_position, flower_pos)
+            flower_pos = flower.position
+            distance = manhattan_distance(my_position, flower_pos)
             if distance < min_distance:
-                closest_flower = flower
+                closest_flower = flower.position
                 min_distance = distance
                 can_claim = True
 
                 for other_bee in observation['bees']:
-                    other_distance = self.__distance(other_bee['position'], flower_pos)
+                    other_distance = manhattan_distance(other_bee['position'], flower_pos)
                     if other_distance < distance or (other_distance == distance and other_bee['id'] > self.id):
                         can_claim = False
                         break
@@ -44,17 +58,3 @@ class RespectfulBee(Bee):
                         break
 
         return closest_flower, can_claim
-
-
-    def _move_towards(self, target_position):
-        # Calculate direction to move towards the target
-        x_diff = target_position[0] - self.spawn_location[0]
-        y_diff = target_position[1] - self.spawn_location[1]
-        
-        if abs(x_diff) > abs(y_diff):
-            return BEE_DOWN if x_diff > 0 else BEE_UP
-        else:
-            return BEE_RIGHT if y_diff > 0 else BEE_LEFT
-
-    def __distance(self, pos1, pos2):
-        return np.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)

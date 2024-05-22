@@ -1,3 +1,4 @@
+import numpy as np
 from bee_colonies.models.queen_bee import QueenBee
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
@@ -9,6 +10,8 @@ WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT, WASP_ATTACK, WASP_N_ACTION
 WASP_LIFE_POINTS = 20
 WASP_ATTACK_POWER = 20
 
+
+Coord = tuple[int, int]
 
 class Wasp(Agent):
     def __init__(self, id):
@@ -49,3 +52,15 @@ class Wasp(Agent):
         if not self.is_alive:
             rep = f"[{rep}]"
         return rep
+
+def move_towards(src: Coord, dest: Coord):
+    x1, y1 = src
+    x2, y2 = dest
+    dx, dy = abs(x2 - x1), abs(y2 - y1)
+
+    if dx == 0 and dy == 0:
+        return WASP_STAY
+    if dx > dy:
+        return WASP_UP if x2 < x1 else WASP_DOWN
+    else:
+        return WASP_LEFT if y2 < y1 else WASP_RIGHT

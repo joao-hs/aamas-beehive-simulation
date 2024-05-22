@@ -67,15 +67,14 @@ class Bee(Agent):
 def move_towards(src: Coord, dest: Coord):
     x1, y1 = src
     x2, y2 = dest
-    dx, dy = x2 - x1, y2 - y1
+    dx, dy = abs(x2 - x1), abs(y2 - y1)
 
     if dx == 0 and dy == 0:
         return BEE_STAY
     if dx > dy:
-        return BEE_DOWN if dx > 0 else BEE_LEFT
+        return BEE_UP if x2 < x1 else BEE_DOWN
     else:
-        return BEE_RIGHT if dy > 0 else BEE_UP
-
+        return BEE_LEFT if y2 < y1 else BEE_RIGHT
 
 def move_away(src: Coord, away: Coord):
     x1, y1 = src
@@ -85,8 +84,4 @@ def move_away(src: Coord, away: Coord):
     if dx > dy:
         return BEE_UP if dx > 0 else BEE_RIGHT
     else:
-        return BEE_LEFT if dy > 0 else BEE_DOWN
-
-
-def random_walk():
-    return np.random.choice([BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT])
+        return BEE_LEFT if dy > 0 else BEE_LEFT

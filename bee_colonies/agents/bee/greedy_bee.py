@@ -15,6 +15,11 @@ class GreedyBee(Bee):
         """
         if not self.is_alive:
             return apply_mask_to_action(BEE_STAY, self.mask)
+        
+        # Always prioritize attacking
+        if self.mask[BEE_ATTACK] == 1:
+            return apply_mask_to_action(BEE_ATTACK, self.mask)
+
         stay = np.zeros(BEE_N_ACTIONS)
         stay[BEE_STAY] = 1
         if np.array_equal(self.mask, stay):
@@ -22,11 +27,8 @@ class GreedyBee(Bee):
         position = self.last_observation["position"]
 
         if self.pollen:
-            #print("has pollen")
             if position == self.beehive_location:
-                #print("DROPPING")
                 return apply_mask_to_action(BEE_DROP, self.mask)
-            #print(position, self.beehive_location, apply_mask_to_action(move_towards(position, self.beehive_location), self.mask), move_towards(position, self.beehive_location))
             return apply_mask_to_action(move_towards(position, self.beehive_location), self.mask)
         
         visible_flowers = self.last_observation["flowers"]
@@ -39,7 +41,6 @@ class GreedyBee(Bee):
             if f.pollen:
                 # if bee on flower
                 if position == f.position:
-                    print("getting flower", position)
                     return apply_mask_to_action(BEE_PICK, self.mask)
                 return apply_mask_to_action(move_towards(position, f.position), self.mask)
             

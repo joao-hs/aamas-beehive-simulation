@@ -1,9 +1,12 @@
-from bee_colonies.models.bee import Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, \
-    BEE_DROP, move_towards, move_away, random_walk, Coord
+import numpy as np
+from bee_colonies.models.bee import BEE_N_ACTIONS, Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, \
+    BEE_DROP, move_towards, move_away, Coord
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
+from bee_colonies.models.searching_guide import SearchingGuide
 
 # FINE TUNE ARGUMENTS
 KEEP_AWAY_FROM_BEEHIVE_DISTANCE = 5
+RANDOM_WALK_INTENT = 3
 
 
 class SocialBee(Bee):
@@ -11,6 +14,7 @@ class SocialBee(Bee):
         super().__init__(local_beehive_id)
         self.picked_pollen_from = None
         self.target_flower = None
+        self.searching_guide = SearchingGuide([BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT], RANDOM_WALK_INTENT)
 
     def action(self) -> int:
         """
@@ -19,6 +23,15 @@ class SocialBee(Bee):
         if not self.is_alive:
             return apply_mask_to_action(BEE_STAY, self.mask)
         position = self.last_observation["position"]
+
+        # Always prioritize attacking
+        if self.mask[BEE_ATTACK] == 1:
+            return apply_mask_to_action(BEE_ATTACK, self.mask)
+
+        stay = np.zeros(BEE_N_ACTIONS)
+        stay[BEE_STAY] = 1
+        if np.array_equal(self.mask, stay):
+            return BEE_STAY
 
         if self.pollen:
             if position == self.beehive_location:
@@ -38,9 +51,11 @@ class SocialBee(Bee):
         if len(visible_flowers) == 0:
             return apply_mask_to_action(self.search_for_flowers(position), self.mask)
 
-        for flower_coord in visible_flowers:
-            if flower_coord not in self.queen.pursuing_flower_set:
-                self.target_flower = flower_coord
+        visible_flowers.sort(key=lambda x: manhattan_distance(position, x.position))
+        for flower in visible_flowers:
+            if flower not in self.queen.pursuing_flower_set:
+                self.target_flower = flower
+                self.queen.pursuing_flower_set.add(self.target_flower)
                 return apply_mask_to_action(move_towards(position, self.target_flower.position), self.mask)
         return apply_mask_to_action(self.search_for_flowers(position), self.mask)
 
@@ -50,4 +65,4 @@ class SocialBee(Bee):
         """
         if manhattan_distance(position, self.beehive_location) < KEEP_AWAY_FROM_BEEHIVE_DISTANCE:
             return move_away(position, self.beehive_location)
-        return random_walk()
+        return self.searching_guide.walk(position)

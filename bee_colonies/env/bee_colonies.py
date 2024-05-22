@@ -1,4 +1,3 @@
-import functools
 import random
 from copy import copy
 from os import environ
@@ -7,14 +6,14 @@ import numpy as np
 
 from pettingzoo import ParallelEnv
 
-from bee_colonies.models.flower import Flower
+from bee_colonies.models.flower import Flower, generate_flowers
 
-from bee_colonies.models.queen_bee import QueenBee
+from bee_colonies.models.queen_bee import HEALTH_SCORE_FUNCTION, QueenBee
 from bee_colonies.models.bee import Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, \
     BEE_DROP, BEE_N_ACTIONS
 from bee_colonies.models.wasp import Wasp, WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT, WASP_ATTACK, \
     WASP_N_ACTIONS
-from bee_colonies.models.agent import Agent
+from bee_colonies.models.agent import Agent, manhattan_distance
 from bee_colonies.models.grid import Grid
 
 
@@ -35,8 +34,8 @@ class BeeColonyEnv(ParallelEnv):
     }
 
     def __init__(self, queen_bees: list[QueenBee], bees: tuple[list[Bee], ...], wasps: list[Wasp], seed=None,
-                 grid_shape=(64, 64),
-                 n_bees_per_colony=(10,), flower_density=0.5, n_wasps=1, range_of_vision=5, max_steps=1000):
+                 grid_shape=(64, 64), n_bees_per_colony=(10,), flower_density=0.5, n_wasps=1, range_of_vision=2,
+                 num_clusters=2, max_distance_from_cluster=5, max_steps=1000):
         """
         The init method takes in environment arguments.
 
@@ -87,6 +86,8 @@ class BeeColonyEnv(ParallelEnv):
 
         self.timestep: int = None
         self._flower_density = flower_density
+        self._num_clusters = num_clusters
+        self._max_distance_from_cluster = max_distance_from_cluster
         self._max_steps = max_steps
         self._grid = Grid(*self._grid_shape)
 
@@ -112,12 +113,12 @@ class BeeColonyEnv(ParallelEnv):
         self.wasps: list[Wasp] = copy(self.init_wasps)
         self.timestep: int = 0
 
-        self.flower_coordinates = [
-            (a, b)
-            for a in range(self._grid_shape[0])
-            for b in range(self._grid_shape[1])
-            if random.random() <= self._flower_density
-        ]
+        clusters = tuple(
+            (np.random.randint(0, self._grid_shape[0]), np.random.randint(0, self._grid_shape[1]))
+            for _ in range(self._num_clusters)
+        )
+
+        self.flower_coordinates = generate_flowers(self._grid_shape, self._flower_density, clusters)
 
         self.flowers = {
             flower_coord: Flower(flower_coord) for flower_coord in self.flower_coordinates
@@ -126,7 +127,7 @@ class BeeColonyEnv(ParallelEnv):
         self.beehive_coordinates = []
 
         for _ in range(self._n_colonies):
-            new_location = self.__assign_beehive_location()
+            new_location = self.__assign_beehive_location(clusters)
             self.beehive_coordinates.append(new_location)
 
 
@@ -170,6 +171,9 @@ class BeeColonyEnv(ParallelEnv):
         for agent, action in actions.items():
             if agent.is_alive:
                 self.__update_agent(agent, action)
+
+        for flower in self.flowers.values():
+            flower.timestep()
 
         # Generate action masks
         # all can do all
@@ -226,7 +230,27 @@ class BeeColonyEnv(ParallelEnv):
         )
 
         # Infos
-        infos = {}
+        infos = {
+            "timestep": self.timestep,
+            "alive": {
+                queen.id: queen.alive_bees for queen in self.queen_bees
+            },
+            "dead_count": {
+                queen.id: [bee.is_alive for bee in queen_bee.bees].count(False) for queen in self.queen_bees
+            },
+            "food": {
+                queen.id: queen.food_quantity for queen in self.queen_bees
+            },
+            "health": {
+                queen.id: HEALTH_SCORE_FUNCTION(queen.food_quantity, queen.alive_bees) for queen in self.queen_bees
+            },
+            "health_tendency_counter": {
+                queen.id: queen.health_tendency_counter for queen in self.queen_bees
+            },
+            "presence_in_beehive": {
+                queen.id: np.count_nonzero(queen.presence_array == 1) for queen in self.queen_bees
+            }
+        }
 
         return observations, rewards, masks, done, infos
 
@@ -241,22 +265,22 @@ class BeeColonyEnv(ParallelEnv):
         return (
             [  # 2 in a multi binary action space means any action is possible
                 2 * np.ones(queen_bee.action_space.n, dtype=np.int8) \
-                if queen_bee.is_alive \
-                else np.zeros(queen_bee.action_space.n, dtype=np.int8) \
+                    if queen_bee.is_alive \
+                    else np.zeros(queen_bee.action_space.n, dtype=np.int8) \
                 for queen_bee in self.queen_bees
             ],
             tuple(  # 1 in a discrete action space means the action is possible
                 [
                     np.ones(bee.action_space.n, dtype=np.int8) \
-                    if bee.is_alive \
-                    else np.zeros(bee.action_space.n, dtype=np.int8) \
+                        if bee.is_alive \
+                        else np.zeros(bee.action_space.n, dtype=np.int8) \
                     for bee in colony
                 ] for colony in self.bees_by_colony
             ),
             [  # 1 in a discrete action space means the action is possible
                 np.ones(wasp.action_space.n, dtype=np.int8) \
-                if wasp.is_alive \
-                else np.zeros(wasp.action_space.n, dtype=np.int8) \
+                    if wasp.is_alive \
+                    else np.zeros(wasp.action_space.n, dtype=np.int8) \
                 for wasp in self.wasps
             ]
         )
@@ -297,19 +321,30 @@ class BeeColonyEnv(ParallelEnv):
             position = self.__random_position()
         return position
 
-    def __assign_beehive_location(self) -> Coord:
+    def __random_available_position_within(self, center, radius) -> Coord:
+        bound_x = max(0, center[0] - radius), min(self._grid_shape[0] - 1, center[0] + radius)
+        bound_y = max(0, center[1] - radius), min(self._grid_shape[1] - 1, center[1] + radius)
+        possible_coords = [
+            (x, y)
+            for x in range(bound_x[0], bound_x[1] + 1)
+            for y in range(bound_y[0], bound_y[1] + 1)
+            if manhattan_distance((x, y), center) <= radius
+        ]
+        position = random.choice(possible_coords)
+        while position in self.__taken_positions():
+            position = random.choice(possible_coords)
+        return position
+
+    def __assign_beehive_location(self, clusters) -> Coord:
         """Assigns a location for a new beehive, ensuring it is adequately spaced from existing beehives."""
         min_distance = 10  # Minimum acceptable distance between beehives, adjust as needed.
+        cluster = random.choice(clusters)
 
         while True:
-            potential_location = self.__random_available_position()
-            if all(self.__distance(potential_location, existing_location) >= min_distance for existing_location in
+            potential_location = self.__random_available_position_within(cluster, self._max_distance_from_cluster)
+            if all(manhattan_distance(potential_location, existing_location) >= min_distance for existing_location in
                    self.beehive_coordinates):
                 return potential_location
-
-    def __distance(self, pos1: Coord, pos2: Coord) -> float:
-        """Calculates the Euclidean distance between two points."""
-        return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
 
     def __assign_wasp_start_location(self) -> Coord:
         """Assigns a start location for a new wasp, ensuring it starts far from any beehives."""
@@ -317,7 +352,7 @@ class BeeColonyEnv(ParallelEnv):
 
         while True:
             potential_location = self.__random_available_position()
-            if all(self.__distance(potential_location, beehive_location) >= min_distance for beehive_location in
+            if all(manhattan_distance(potential_location, beehive_location) >= min_distance for beehive_location in
                    self.beehive_coordinates):
                 return potential_location
 
@@ -361,8 +396,6 @@ class BeeColonyEnv(ParallelEnv):
             "bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
             "wasps": [wasp_coord for wasp_coord in self.wasp_coordinates if wasp_coord in visible_cells],
         }
-        # print observation{bees}
-        print(observation["bees"])
         return observation
 
     def __update_agent(self, agent: Agent, action: int | np.ndarray):
@@ -399,6 +432,8 @@ class BeeColonyEnv(ParallelEnv):
                     wasp_position = self.wasp_coordinates[wasp.id]
                     if position == wasp_position:
                         wasp.receive_damage(agent.attack_power)
+                        if not wasp.is_alive:
+                            self.wasp_coordinates.remove(wasp_position)
                         break
 
             elif action == BEE_PICK:  # pick up pollen

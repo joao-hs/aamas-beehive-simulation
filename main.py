@@ -1,4 +1,9 @@
 from bee_colonies.agents.bee.greedy_bee import GreedyBee
+from bee_colonies.agents.bee.respectful_bee import RespectfulBee
+from bee_colonies.agents.bee.social_bee import SocialBee
+from bee_colonies.agents.queen_bee.conservative_queen_bee import ConservativeQueenBee
+from bee_colonies.agents.queen_bee.considerate_queen_bee import ConsiderateQueenBee
+from bee_colonies.agents.wasp.greedy_wasp import GreedyWasp
 from bee_colonies.env.bee_colonies import BeeColonyEnv
 from bee_colonies.models.agent import Agent
 from pygame import event, QUIT, quit
@@ -15,9 +20,11 @@ COLAB = False
 SEED = 42
 N_BEES_PER_COLONY = (45, 20)
 N_COLONIES = len(N_BEES_PER_COLONY)
-N_WASPS = 50
+N_WASPS = 2
 FLOWER_PROB = 0.1
 VISION = 3
+NUM_FLOWER_CLUSTERS = 2
+MAX_DISTANCE_FROM_CLUSTER = 25
 MAX_STEPS = 1000
 TIMESTEPS_AFTER_DONE = 5
 
@@ -60,7 +67,8 @@ def run_env(env):
         print("Step", env.timestep)
 
         actions: dict[Agent, int | np.ndarray] = compute_actions(env)
-        observations, rewards, masks, done, truncations = env.step(actions)
+        observations, rewards, masks, done, info = env.step(actions)
+        print(info)
         if done:
             doneFor += 1
         agents_observe(env, observations, masks)
@@ -69,10 +77,10 @@ def run_env(env):
         print('-' * 20)
 
 
-def main():
+def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
     queen_bees: list[QueenBee] = [
-        QueenBee(id=colony, bees=[
-            GreedyBee(local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
+        queen_bee_classes[colony](id=colony, bees=[
+            bee_classes[colony](local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
         ]) for colony in range(N_COLONIES)
     ]
 
@@ -84,14 +92,27 @@ def main():
         for bee in colony_bees:
             bee.set_queen(queen_bees[colony])
 
-    wasps: list[Wasp] = [Wasp(i) for i in range(N_WASPS)]
+    wasps: list[Wasp] = [wasp_class(i) for i in range(N_WASPS)]
 
-    env = BeeColonyEnv(queen_bees, bees, wasps, seed=SEED, grid_shape=(100, 100), n_wasps=N_WASPS,
+    env = BeeColonyEnv(queen_bees, bees, wasps, seed=SEED, grid_shape=(75, 75), n_wasps=N_WASPS,
                        n_bees_per_colony=N_BEES_PER_COLONY, flower_density=FLOWER_PROB,
+                       num_clusters=NUM_FLOWER_CLUSTERS, max_distance_from_cluster=MAX_DISTANCE_FROM_CLUSTER,
                        range_of_vision=VISION, max_steps=MAX_STEPS)
-    run_env(env)
-    # print(queen_bees[0].received)
-    env.close()
+    return env
+
+
+
+def main():
+    environments = [
+        create_scenario([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
+        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
+        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp),
+        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp),
+    ]
+
+    for env in environments:
+        run_env(env)
+        env.close()
 
 
 if __name__ == "__main__":

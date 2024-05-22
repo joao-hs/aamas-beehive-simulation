@@ -5,11 +5,11 @@ import pygame as pg
 BACKGROUND_COLOR = (0, 100, 0)
 
 COLORS = {
-    "F": (255, 182, 193),  # pink
-    "N": (0, 255, 0),  # brown
-    "H": (255, 0, 0),  # red
-    "W": (255, 140, 0),  # orange
-    "B": (255, 255, 0)  # yellow
+    "F": (255, 182, 193),  # pink - flower
+    "R": (88, 57, 39),  # brown - flower regeneration pollen
+    "H": (255, 0, 0),  # red - beehive
+    "W": (255, 140, 0),  # orange - wasp
+    "B": (255, 255, 0)  # yellow - bee
 }
 
 TICK_RATE = 200
@@ -32,7 +32,7 @@ class Grid:
     def populate(self, flowers, bees_by_colonies, beehives, wasps):
         self.grid = self.empty.copy()
         for flower_position, flower in flowers.items():
-            self.grid[flower_position[0], flower_position[1]] = "F" if flower.pollen else "N"
+            self.grid[flower_position[0], flower_position[1]] = "F" if flower.pollen else "R"
         for colony in bees_by_colonies:
             for bee in colony:
                 self.grid[bee[0], bee[1]] = "B"
