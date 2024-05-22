@@ -1,5 +1,5 @@
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
-from bee_colonies.models.bee import BEE_ATTACK, BEE_N_ACTIONS, BEE_STAY, Bee, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, move_towards
+from bee_colonies.models.bee import BEE_ATTACK, BEE_N_ACTIONS, BEE_STAY, Bee, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_DROP, BEE_PICK, move_towards
 import numpy as np
 
 from bee_colonies.models.searching_guide import SearchingGuide
@@ -21,11 +21,19 @@ class RespectfulBee(Bee):
         stay[BEE_STAY] = 1
         if np.array_equal(self.mask, stay):
             return BEE_STAY
+        
+        position = self.last_observation["position"]
+        if self.pollen:
+            if position == self.beehive_location:
+                return apply_mask_to_action(BEE_DROP, self.mask)
+            return apply_mask_to_action(move_towards(position, self.beehive_location), self.mask)
 
         # Find the closest flower that this bee can claim
         flower_position, can_claim = self._find_flower_to_claim(self.last_observation)
 
         if can_claim and flower_position:
+            if position == flower_position:
+                return apply_mask_to_action(BEE_PICK, self.mask)
             # If a flower is claimable, determine the move to get there
             return apply_mask_to_action(move_towards(self.last_observation["position"], flower_position), self.mask)
         else:
