@@ -72,9 +72,9 @@ def move_towards(src: Coord, dest: Coord):
     if dx == 0 and dy == 0:
         return BEE_STAY
     if dx > dy:
-        return BEE_DOWN if dx > 0 else BEE_UP
+        return BEE_DOWN if dx > 0 else BEE_LEFT
     else:
-        return BEE_RIGHT if dy > 0 else BEE_LEFT
+        return BEE_RIGHT if dy > 0 else BEE_UP
 
 
 def move_away(src: Coord, away: Coord):
@@ -83,9 +83,9 @@ def move_away(src: Coord, away: Coord):
     dx, dy = x2 - x1, y2 - y1
 
     if dx > dy:
-        return BEE_UP if dx > 0 else BEE_DOWN
+        return BEE_UP if dx > 0 else BEE_RIGHT
     else:
-        return BEE_LEFT if dy > 0 else BEE_LEFT
+        return BEE_LEFT if dy > 0 else BEE_DOWN
 
 
 def random_walk():

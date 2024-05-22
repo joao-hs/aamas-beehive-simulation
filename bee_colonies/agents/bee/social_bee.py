@@ -29,10 +29,10 @@ class SocialBee(Bee):
             return apply_mask_to_action(move_towards(position, self.beehive_location), self.mask)
 
         if self.target_flower is not None:
-            if position == self.target_flower:
+            if position == self.target_flower.position:
                 self.picked_pollen_from = self.target_flower
                 return apply_mask_to_action(BEE_PICK, self.mask)
-            return apply_mask_to_action(move_towards(position, self.target_flower), self.mask)
+            return apply_mask_to_action(move_towards(position, self.target_flower.position), self.mask)
 
         visible_flowers = self.last_observation["flowers"]
         if len(visible_flowers) == 0:
@@ -41,7 +41,7 @@ class SocialBee(Bee):
         for flower_coord in visible_flowers:
             if flower_coord not in self.queen.pursuing_flower_set:
                 self.target_flower = flower_coord
-                return apply_mask_to_action(move_towards(position, self.target_flower), self.mask)
+                return apply_mask_to_action(move_towards(position, self.target_flower.position), self.mask)
         return apply_mask_to_action(self.search_for_flowers(position), self.mask)
 
     def search_for_flowers(self, position: Coord):

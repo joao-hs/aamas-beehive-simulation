@@ -6,13 +6,13 @@ BACKGROUND_COLOR = (0, 100, 0)
 
 COLORS = {
     "F": (255, 182, 193),  # pink
-    "F'": (110, 58, 60),  # brown
+    "N": (0, 255, 0),  # brown
     "H": (255, 0, 0),  # red
     "W": (255, 140, 0),  # orange
     "B": (255, 255, 0)  # yellow
 }
 
-TICK_RATE = 60
+TICK_RATE = 200
 
 
 class Grid:
@@ -32,7 +32,7 @@ class Grid:
     def populate(self, flowers, bees_by_colonies, beehives, wasps):
         self.grid = self.empty.copy()
         for flower_position, flower in flowers.items():
-            self.grid[flower_position[0], flower_position[1]] = "F" if flower.pollen else "F'"
+            self.grid[flower_position[0], flower_position[1]] = "F" if flower.pollen else "N"
         for colony in bees_by_colonies:
             for bee in colony:
                 self.grid[bee[0], bee[1]] = "B"

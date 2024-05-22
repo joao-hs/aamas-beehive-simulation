@@ -36,7 +36,7 @@ class BeeColonyEnv(ParallelEnv):
 
     def __init__(self, queen_bees: list[QueenBee], bees: tuple[list[Bee], ...], wasps: list[Wasp], seed=None,
                  grid_shape=(64, 64),
-                 n_bees_per_colony=(10,), flower_density=0.5, n_wasps=1, range_of_vision=2, max_steps=1000):
+                 n_bees_per_colony=(10,), flower_density=0.5, n_wasps=1, range_of_vision=5, max_steps=1000):
         """
         The init method takes in environment arguments.
 
@@ -129,6 +129,7 @@ class BeeColonyEnv(ParallelEnv):
             new_location = self.__assign_beehive_location()
             self.beehive_coordinates.append(new_location)
 
+
         self.bee_coordinates = tuple(
             [self.beehive_coordinates[bee.queen_id] for bee in queen_bee.bees] for queen_bee in self.queen_bees
         )  # bees start at their respective beehives
@@ -163,6 +164,8 @@ class BeeColonyEnv(ParallelEnv):
         self.timestep += 1
         # TODO: rewards
         rewards = None
+        for flower in self.flowers.values():
+            flower.timestep()
         # Execute actions
         for agent, action in actions.items():
             if agent.is_alive:
@@ -354,14 +357,8 @@ class BeeColonyEnv(ParallelEnv):
         observation = {
             "position": center,
             "beehives": [beehive_coord for beehive_coord in self.beehive_coordinates if beehive_coord in visible_cells],
-            "flowers": [flower_coord for flower_coord in self.flower_coordinates if flower_coord in visible_cells],
-            #"bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
-            "bees": [
-                        {"id": bee.local_beehive_id, "position": self.bee_coordinates[bee.queen_id][bee.local_beehive_id]}
-                        for colony in self.bees_by_colony
-                        for bee in colony
-                        if self.bee_coordinates[bee.queen_id][bee.local_beehive_id] in visible_cells
-                    ],
+            "flowers": [flower for flower in self.flowers.values() if flower.position in visible_cells],
+            "bees": [bee_coord for bee_coord in self.bee_coordinates if bee_coord in visible_cells],
             "wasps": [wasp_coord for wasp_coord in self.wasp_coordinates if wasp_coord in visible_cells],
         }
         # print observation{bees}

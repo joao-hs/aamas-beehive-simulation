@@ -1,3 +1,4 @@
+from bee_colonies.agents.bee.greedy_bee import GreedyBee
 from bee_colonies.env.bee_colonies import BeeColonyEnv
 from bee_colonies.models.agent import Agent
 from pygame import event, QUIT, quit
@@ -16,7 +17,7 @@ N_BEES_PER_COLONY = (45, 20)
 N_COLONIES = len(N_BEES_PER_COLONY)
 N_WASPS = 50
 FLOWER_PROB = 0.1
-VISION = 2
+VISION = 3
 MAX_STEPS = 1000
 TIMESTEPS_AFTER_DONE = 5
 
@@ -71,7 +72,7 @@ def run_env(env):
 def main():
     queen_bees: list[QueenBee] = [
         QueenBee(id=colony, bees=[
-            Bee(local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
+            GreedyBee(local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
         ]) for colony in range(N_COLONIES)
     ]
 
@@ -89,6 +90,7 @@ def main():
                        n_bees_per_colony=N_BEES_PER_COLONY, flower_density=FLOWER_PROB,
                        range_of_vision=VISION, max_steps=MAX_STEPS)
     run_env(env)
+    # print(queen_bees[0].received)
     env.close()
 
 

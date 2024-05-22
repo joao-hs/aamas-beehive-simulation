@@ -6,7 +6,7 @@ from gym.spaces import MultiBinary
 # FINE TUNE ARGUMENTS
 STARTING_FOOD_QUANTITY_PER_BEE = 100
 CONSUMED_FOOD_PER_TURN_PER_BEE = 1
-FOOD_QUANTITY_PER_POLEN = 20
+FOOD_QUANTITY_PER_POLEN = 100
 IS_GOOD_HEALTH = lambda health_score: health_score > 25
 IS_BAD_HEALTH = lambda health_score: health_score < 15
 TENDENCY_THRESHOLD = 10
@@ -23,6 +23,7 @@ class QueenBee(Agent):
         self.alive_bees = n_bees
         self.presence_array = np.ones(n_bees)
         self.food_quantity = STARTING_FOOD_QUANTITY_PER_BEE * n_bees
+        self.received = 0
         self.last_observation = None
         self.mask = None
         self.action_space = MultiBinary(n_bees)
@@ -46,6 +47,7 @@ class QueenBee(Agent):
 
     def receive_polen(self):
         """Queen Bee receives polen from a bee."""
+        self.received += 1
         self.food_quantity += FOOD_QUANTITY_PER_POLEN
         print(f"Queen Bee {self.id} received polen and now has {self.food_quantity} health.")
 
