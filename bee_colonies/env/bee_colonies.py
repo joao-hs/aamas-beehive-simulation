@@ -35,7 +35,7 @@ class BeeColonyEnv(ParallelEnv):
 
     def __init__(self, queen_bees: list[QueenBee], bees: tuple[list[Bee], ...], wasps: list[Wasp], seed=None,
                  grid_shape=(64, 64), n_bees_per_colony=(10,), flower_density=0.5, n_wasps=1, range_of_vision=2,
-                 num_clusters=2, max_distance_from_cluster=5, max_steps=1000):
+                 num_clusters=2, max_distance_from_cluster=5, section_size=5, max_steps=1000):
         """
         The init method takes in environment arguments.
 
@@ -88,6 +88,7 @@ class BeeColonyEnv(ParallelEnv):
         self._flower_density = flower_density
         self._num_clusters = num_clusters
         self._max_distance_from_cluster = max_distance_from_cluster
+        self._section_size = section_size
         self._max_steps = max_steps
         self._grid = Grid(*self._grid_shape)
 
@@ -130,7 +131,6 @@ class BeeColonyEnv(ParallelEnv):
             new_location = self.__assign_beehive_location(clusters)
             self.beehive_coordinates.append(new_location)
 
-
         self.bee_coordinates = tuple(
             [self.beehive_coordinates[bee.queen_id] for bee in queen_bee.bees] for queen_bee in self.queen_bees
         )  # bees start at their respective beehives
@@ -149,6 +149,12 @@ class BeeColonyEnv(ParallelEnv):
 
         for wasp in self.wasps:
             wasp.set_spawn(self.wasp_coordinates[wasp.id])
+
+        for queen_bee in self.queen_bees:
+            for section in self.__get_all_sections():
+                queen_bee.pursuing_flower_map[section] = set()
+                queen_bee.section_size = self._section_size
+
 
         # Observation
         observations = (
@@ -236,7 +242,7 @@ class BeeColonyEnv(ParallelEnv):
                 queen.id: queen.alive_bees for queen in self.queen_bees
             },
             "dead_count": {
-                queen.id: [bee.is_alive for bee in queen_bee.bees].count(False) for queen in self.queen_bees
+                queen.id: [not bee.is_alive for bee in queen.bees].count(True) for queen in self.queen_bees
             },
             "food": {
                 queen.id: queen.food_quantity for queen in self.queen_bees
@@ -491,3 +497,11 @@ class BeeColonyEnv(ParallelEnv):
                 return bee_number
             bee_number -= n_bees
         return None
+
+    def __get_all_sections(self):
+        return [
+            (a, b)
+            for a in range(0, self._grid_shape[0], self._section_size)
+            for b in range(0, self._grid_shape[1], self._section_size)
+        ]
+

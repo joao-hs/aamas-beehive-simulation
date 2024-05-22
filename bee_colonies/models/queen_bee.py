@@ -29,7 +29,8 @@ class QueenBee(Agent):
         self.action_space = MultiBinary(n_bees)
         self.health_tendency_counter = 0
         # used by social bees
-        self.pursuing_flower_set = set()
+        self.pursuing_flower_map = dict()
+        self.section_size = None
 
     def action(self) -> np.ndarray:
         """
@@ -75,12 +76,12 @@ class QueenBee(Agent):
             self.presence_array = np.append(self.presence_array, 1)
             new_bee = Bee(total_no_bees)
             new_bee.set_queen(self)
-            self.action_space = MultiBinary(total_no_bees+1)
+            self.action_space = MultiBinary(total_no_bees + 1)
             self.alive_bees += 1
             return new_bee, True
         elif self.health_tendency_counter <= -TENDENCY_THRESHOLD:
             # sacrifices a bee, preferably if they're inside the beehive
-            picked_index = self.presence_array.argmax()
+            picked_index = self.__pick_bee_to_sacrifice()
             self.presence_array[picked_index] = 0
             self.alive_bees -= 1
             return self.bees[picked_index], False
@@ -94,3 +95,12 @@ class QueenBee(Agent):
         for bee in self.bees:
             bee.is_alive = False
 
+    def __pick_bee_to_sacrifice(self):
+        picked_bee_id = None
+        for bee in self.bees:
+            if bee.is_alive:
+                if picked_bee_id is None:
+                    picked_bee_id = bee.local_beehive_id  # first alive bee found
+                if self.presence_array[bee.local_beehive_id] == 1:
+                    return bee.local_beehive_id  # first alive bee inside the beehive
+        return picked_bee_id

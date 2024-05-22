@@ -1,5 +1,6 @@
 import numpy as np
-from bee_colonies.models.bee import BEE_N_ACTIONS, Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, \
+from bee_colonies.models.bee import BEE_N_ACTIONS, Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, \
+    BEE_PICK, \
     BEE_DROP, move_towards, move_away, Coord
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 from bee_colonies.models.searching_guide import SearchingGuide
@@ -35,7 +36,7 @@ class SocialBee(Bee):
 
         if self.pollen:
             if position == self.beehive_location:
-                self.queen.pursuing_flower_set.remove(self.picked_pollen_from)
+                self.queen.pursuing_flower_map[self.__get_section(self.picked_pollen_from.position)].remove(self.picked_pollen_from)
                 self.target_flower = None
                 self.picked_pollen_from = None
                 return apply_mask_to_action(BEE_DROP, self.mask)
@@ -53,11 +54,15 @@ class SocialBee(Bee):
 
         visible_flowers.sort(key=lambda x: manhattan_distance(position, x.position))
         for flower in visible_flowers:
-            if flower not in self.queen.pursuing_flower_set:
+            if flower not in self.queen.pursuing_flower_map[self.__get_section(flower.position)]:
                 self.target_flower = flower
-                self.queen.pursuing_flower_set.add(self.target_flower)
+                self.queen.pursuing_flower_map[self.__get_section(self.target_flower.position)].add(self.target_flower)
                 return apply_mask_to_action(move_towards(position, self.target_flower.position), self.mask)
         return apply_mask_to_action(self.search_for_flowers(position), self.mask)
+
+    def __get_section(self, position):
+        return (position[0] // self.queen.section_size)*self.queen.section_size, \
+            (position[1] // self.queen.section_size)*self.queen.section_size
 
     def search_for_flowers(self, position: Coord):
         """
