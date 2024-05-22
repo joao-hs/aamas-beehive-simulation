@@ -476,8 +476,8 @@ class BeeColonyEnv(ParallelEnv):
                     queen_bee.welcome(agent)
             else:
                 raise Exception("Unknown action")
-
-        elif isinstance(agent, Wasp):
+            
+        elif isinstance(agent, Wasp):            
             position: Coord = self.wasp_coordinates[agent.id]
             x, y = position
             if action == WASP_STAY:
@@ -491,14 +491,33 @@ class BeeColonyEnv(ParallelEnv):
             elif action == WASP_RIGHT:
                 self.wasp_coordinates[agent.id] = self.__clamp_coord((x, y + 1))
             elif action == WASP_ATTACK:
+                print("Wasp attacking")
                 for queen_bee_id, beehive in enumerate(self.beehive_coordinates):
                     if position == beehive:
-                        self.queen_bees[queen_bee_id].receive_damage(agent.attack_power)
-                        break
+                        if self.queen_bees[queen_bee_id].is_alive:
+                            self.queen_bees[queen_bee_id].receive_damage(agent.attack_power)
+                            # After attack, choose to move randomly or to a strategic position
+                            print("Queen Bee attacked by Wasp")
+                        else:
+                            print("Queen Bee is already dead")
+                            # delete queen_bee from observation
+                            self.queen_bees[queen_bee_id].is_alive = False
+                            new_position = self.__find_new_position_after_attack(agent.id)
+                            self.wasp_coordinates[agent.id] = new_position
+                            break
             else:
                 raise Exception("Unknown action")
         else:
             raise Exception("Unknown agent type")
+        
+    def __find_new_position_after_attack(self, wasp_id):
+        # Simple strategy: move one step in a random direction, ensuring it's within bounds
+        current_position = self.wasp_coordinates[wasp_id]
+        possible_moves = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        random_move = random.choice(possible_moves)
+        new_x = max(0, min(self._grid_shape[0] - 1, current_position[0] + random_move[0]))
+        new_y = max(0, min(self._grid_shape[1] - 1, current_position[1] + random_move[1]))
+        return (new_x, new_y)
 
     def __clamp_coord(self, coord):
         return max(0, min(coord[0], self._grid_shape[0] - 1)), max(0, min(coord[1], self._grid_shape[1] - 1))

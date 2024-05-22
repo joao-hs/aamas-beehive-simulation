@@ -46,6 +46,9 @@ class QueenBee(Agent):
     def receive_damage(self, damage):
         """Reduces the health of the Queen Bee by the specified damage amount."""
         self.food_quantity -= damage
+        if self.food_quantity <= 0:
+            self.food_quantity = 0
+            self.is_alive = False
 
     def receive_polen(self):
         """Queen Bee receives polen from a bee."""

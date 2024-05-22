@@ -1,6 +1,6 @@
 from bee_colonies.env.bee_colonies import WASP_DOWN, WASP_UP, WASP_RIGHT, WASP_LEFT, WASP_STAY
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
-from bee_colonies.models.wasp import Wasp, move_towards
+from bee_colonies.models.wasp import WASP_ATTACK, Wasp, move_towards
 from bee_colonies.models.searching_guide import SearchingGuide
 import numpy as np
 
@@ -17,8 +17,13 @@ class GreedyWasp(Wasp):
             return apply_mask_to_action(WASP_STAY, self.mask)
 
         beehive_location = self._find_nearest_beehive()
+        position = self.last_observation["position"]
+        
         if beehive_location:
-            return apply_mask_to_action(move_towards(self.last_observation["position"], beehive_location), self.mask)
+            if position == beehive_location:
+                return apply_mask_to_action(WASP_ATTACK, self.mask)
+            return apply_mask_to_action(move_towards(position, beehive_location), self.mask)
+
         else:
             # Move randomly if no beehive is visible
             return apply_mask_to_action(self.searching_guide.walk(self.last_observation["position"]), self.mask)
