@@ -412,8 +412,8 @@ class BeeColonyEnv(ParallelEnv):
 
         visible_cells = [
             (center[0] + i, center[1] + j)
-            for i in range(-self._range_of_vision * multiplier, self._range_of_vision * multiplier + 1)
-            for j in range(-self._range_of_vision * multiplier, self._range_of_vision * multiplier + 1)
+            for i in range(-int(self._range_of_vision * multiplier), int(self._range_of_vision * multiplier) + 1)
+            for j in range(-int(self._range_of_vision * multiplier), int(self._range_of_vision * multiplier) + 1)
             if 0 <= center[0] + i < self._grid_shape[0] and 0 <= center[1] + j < self._grid_shape[1]
         ]
 
