@@ -4,15 +4,15 @@ import seaborn as sns
 
 # File names
 filenames = [
-    'data/greedy_greedy.csv', 
-    'data/greedy_respectful.csv', 
-    'data/greedy_social.csv', 
-    'data/conservative_greedy.csv', 
-    'data/conservative_respectful.csv', 
-    'data/conservative_social.csv',
-    'data/considerate_greedy.csv',
-    'data/considerate_respectful.csv',
-    'data/considerate_social.csv'
+    'weak_wasp/greedy_greedy.csv', 
+    'weak_wasp/greedy_respectful.csv', 
+    'weak_wasp/greedy_social.csv', 
+    'weak_wasp/conservative_greedy.csv', 
+    'weak_wasp/conservative_respectful.csv', 
+    'weak_wasp/conservative_social.csv',
+    'weak_wasp/considerate_greedy.csv',
+    'weak_wasp/considerate_respectful.csv',
+    'weak_wasp/considerate_social.csv'
 ]
 
 # Read each file and add a scenario label
@@ -20,7 +20,7 @@ dataframes = []
 for file in filenames:
     df = pd.read_csv(file)
     df = df[df['timestep'] % 20 == 0]  # Filter to keep only rows where timestep is a multiple of 10
-    df['scenario'] = file.replace('data/', '').replace('.csv', '')  # Add scenario as a column with simplified names
+    df['scenario'] = file.replace('weak_wasp/', '').replace('.csv', '')  # Add scenario as a column with simplified names
     dataframes.append(df)
 
 # Concatenate all dataframes into one
@@ -34,7 +34,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Number of Alive Bees in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots/num_alive_bees.png')
+plt.savefig('plots_weak_wasp/num_alive_bees.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -44,7 +44,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Number of Dead Bees in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots/num_dead_bees.png')
+plt.savefig('plots_weak_wasp/num_dead_bees.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -54,7 +54,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Food Stored in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots/food_stored.png')
+plt.savefig('plots_weak_wasp/food_stored.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -64,7 +64,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Health of Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots/health.png')
+plt.savefig('plots_weak_wasp/health.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -74,5 +74,5 @@ plt.xlabel('Timestep')
 plt.ylabel('Number of Bees Present in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots/num_bees_present.png')
+plt.savefig('plots_weak_wasp/num_bees_present.png')
 plt.close()
