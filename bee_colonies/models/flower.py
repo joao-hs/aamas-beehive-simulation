@@ -1,6 +1,8 @@
 import numpy as np
 
 TIME_TO_RESTORE_POLLEN = 5
+SPREAD_DIVIDER = 7
+SPREAD_SCALE = 0.1
 
 Coord = tuple[int, int]
 
@@ -34,7 +36,7 @@ def generate_flowers(grid_shape: Coord, flower_density: float, hotspots: tuple[C
     max_flowers_per_hotspot = int((grid_shape[0] * grid_shape[1] * (flower_density + 0.05)) / num_hotspots)
     min_flower_per_hotspot = int((grid_shape[0] * grid_shape[1] * (flower_density - 0.05)) / num_hotspots)
     for center in hotspots:
-        spread = np.random.normal(grid_shape[0] // 7, 0.1)
+        spread = np.random.normal(grid_shape[0] // SPREAD_DIVIDER, SPREAD_SCALE)
         num_flowers = np.random.randint(min_flower_per_hotspot, max_flowers_per_hotspot)
         for _ in range(num_flowers):
             flower_coord = int(np.random.normal(center[0], spread)), \
