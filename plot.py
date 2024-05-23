@@ -4,9 +4,15 @@ import seaborn as sns
 
 # File names
 filenames = [
-    'data/greedy_greedy.csv', 'data/greedy_respectful.csv', 
-    'data/greedy_social.csv', 'data/conservative_greedy.csv', 
-    'data/conservative_respectful.csv', 'data/conservative_social.csv'
+    'data/greedy_greedy.csv', 
+    'data/greedy_respectful.csv', 
+    'data/greedy_social.csv', 
+    'data/conservative_greedy.csv', 
+    'data/conservative_respectful.csv', 
+    'data/conservative_social.csv',
+    'data/considerate_greedy.csv',
+    'data/considerate_respectful.csv',
+    'data/considerate_social.csv'
 ]
 
 # Read each file and add a scenario label
