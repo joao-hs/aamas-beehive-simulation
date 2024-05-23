@@ -13,6 +13,7 @@ import numpy as np
 from bee_colonies.models.bee import Bee
 from bee_colonies.models.queen_bee import QueenBee
 from bee_colonies.models.wasp import Wasp
+import pandas as pd
 
 RANDOM = True
 GREEDY = False
@@ -55,9 +56,12 @@ def compute_actions(env):
     return actions
 
 
-def run_env(env):
+def run_env(env, filename):
+    columns = ['timestep', 'alive_queen1', 'dead_queen1', 'food_queen1', 'health_queen1', 'presence_queen1',
+               'alive_queen2', 'dead_queen2', 'food_queen2', 'health_queen2', 'presence_queen2']
+    simulation_data = pd.DataFrame(columns=columns)
+    
     observations = env.reset()
-
     masks = env.init_masks()
     agents_observe(env, observations, masks)
 
@@ -68,15 +72,34 @@ def run_env(env):
                 break
         print("Step", env.timestep)
 
-        actions: dict[Agent, int | np.ndarray] = compute_actions(env)
+        actions = compute_actions(env)
         observations, rewards, masks, done, info = env.step(actions)
         print(info)
+
+        new_row = {
+            'timestep': info['timestep'],
+            'alive_queen1': info['alive'][0],
+            'dead_queen1': info['dead_count'][0],
+            'food_queen1': info['food'][0],
+            'health_queen1': info['health'][0],
+            'presence_queen1': info['presence_in_beehive'][0],
+            'alive_queen2': info['alive'][1],
+            'dead_queen2': info['dead_count'][1],
+            'food_queen2': info['food'][1],
+            'health_queen2': info['health'][1],
+            'presence_queen2': info['presence_in_beehive'][1]
+        }
+        simulation_data = simulation_data._append(new_row, ignore_index=True)
+
         if done:
             doneFor += 1
         agents_observe(env, observations, masks)
-
         env.render()
         print('-' * 20)
+    
+    # Use the filename parameter to save the DataFrame to a specific file
+    simulation_data.to_csv(filename, index=False)
+
 
 
 def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
@@ -109,17 +132,18 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
 
 
 def main():
-    environments = [
-        create_scenario([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
-        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
-        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp),
-        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp),
+    scenarios = [
+        ([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'conservative_greedy.csv'),
+        ([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'considerate_greedy.csv'),
+        ([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp, 'considerate_social.csv'),
+        ([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'considerate_respectful.csv')
     ]
 
-    for env in environments:
+    for queen_bee_classes, bee_classes, wasp_class, filename in scenarios:
+        env = create_scenario(queen_bee_classes, bee_classes, wasp_class)
         if FAIR_TESTING:
             configure_seed(env.seed)
-        run_env(env)
+        run_env(env, filename)
         env.close()
 
 
