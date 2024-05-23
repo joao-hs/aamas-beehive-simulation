@@ -20,12 +20,12 @@ GREEDY = False
 COLAB = False
 
 SEED = 42
-N_BEES_PER_COLONY = (45, 20)
+N_BEES_PER_COLONY = (20,)
 N_COLONIES = len(N_BEES_PER_COLONY)
-N_WASPS = 2
+N_WASPS = 5
 FLOWER_PROB = 0.1
 VISION = 3
-NUM_FLOWER_CLUSTERS = 2
+NUM_FLOWER_CLUSTERS = 1
 MAX_DISTANCE_FROM_CLUSTER = 25
 MAX_STEPS = 1000
 TIMESTEPS_AFTER_DONE = 5
@@ -57,8 +57,7 @@ def compute_actions(env):
 
 
 def run_env(env, filename):
-    columns = ['timestep', 'alive_queen1', 'dead_queen1', 'food_queen1', 'health_queen1', 'presence_queen1',
-               'alive_queen2', 'dead_queen2', 'food_queen2', 'health_queen2', 'presence_queen2']
+    columns = ['timestep', 'alive_queen1', 'dead_queen1', 'food_queen1', 'health_queen1', 'presence_queen1']
     simulation_data = pd.DataFrame(columns=columns)
     
     observations = env.reset()
@@ -83,12 +82,8 @@ def run_env(env, filename):
             'food_queen1': info['food'][0],
             'health_queen1': info['health'][0],
             'presence_queen1': info['presence_in_beehive'][0],
-            'alive_queen2': info['alive'][1],
-            'dead_queen2': info['dead_count'][1],
-            'food_queen2': info['food'][1],
-            'health_queen2': info['health'][1],
-            'presence_queen2': info['presence_in_beehive'][1]
         }
+        
         simulation_data = simulation_data._append(new_row, ignore_index=True)
 
         if done:
@@ -134,15 +129,19 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
 def main():
     # scenario: ([queen_bee_class1, queen_bee_class2, ..., queen_bee_classN], [bee_class1, bee_class2, ..., bee_classN], wasp_class, filename)
     scenarios = [
-        ([GreedyQueenBee, GreedyQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'greedy_greedy.csv'),
-        ([GreedyQueenBee, GreedyQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'greedy_respectful.csv'),
-        ([GreedyQueenBee, GreedyQueenBee], [SocialBee, SocialBee], GreedyWasp, 'greedy_social.csv'),
-        #([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'conservative_greedy.csv'),
-        ([ConservativeQueenBee, ConservativeQueenBee], [SocialBee, SocialBee], GreedyWasp, 'conservative_social.csv'),
-        ([ConservativeQueenBee, ConservativeQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'conservative_respectful.csv'),
-        #([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'considerate_greedy.csv'),
-        #([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp, 'considerate_social.csv'),
-        #([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'considerate_respectful.csv')
+        ([GreedyQueenBee], [GreedyBee], GreedyWasp, 'data/greedy_greedy.csv'),
+        ([GreedyQueenBee], [RespectfulBee], GreedyWasp, 'data/greedy_respectful.csv'),
+        ([GreedyQueenBee], [SocialBee], GreedyWasp, 'data/greedy_social.csv'),
+        ([ConservativeQueenBee], [GreedyBee], GreedyWasp, 'data/conservative_greedy.csv'),
+        ([ConservativeQueenBee], [SocialBee], GreedyWasp, 'data/conservative_social.csv'),
+        ([ConservativeQueenBee], [RespectfulBee], GreedyWasp, 'data/conservative_respectful.csv'),
+        ([ConsiderateQueenBee], [GreedyBee], GreedyWasp, 'data/considerate_greedy.csv'),
+        ([ConsiderateQueenBee], [SocialBee], GreedyWasp, 'data/considerate_social.csv'),
+        ([ConsiderateQueenBee], [RespectfulBee], GreedyWasp, 'data/considerate_respectful.csv')
+        #([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'data/considerate_greedy.csv'),
+        #([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp, 'data/considerate_social.csv'),
+        #([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'data/considerate_respectful.csv')
+        
     ]
 
     for queen_bee_classes, bee_classes, wasp_class, filename in scenarios:

@@ -18,7 +18,7 @@ from bee_colonies.models.grid import Grid
 
 QUEEN_BEE_VISION_MULTIPLIER = 1
 BEE_VISION_MULTIPLIER = 1
-WASP_VISION_MULTIPLIER = 1
+WASP_VISION_MULTIPLIER = 2
 
 
 def configure_seed(seed):
