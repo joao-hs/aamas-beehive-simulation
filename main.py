@@ -134,10 +134,15 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
 def main():
     # scenario: ([queen_bee_class1, queen_bee_class2, ..., queen_bee_classN], [bee_class1, bee_class2, ..., bee_classN], wasp_class, filename)
     scenarios = [
-        ([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'data/conservative_greedy.csv'),
-        ([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'data/considerate_greedy.csv'),
-        ([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp, 'data/considerate_social.csv'),
-        ([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'data/considerate_respectful.csv')
+        ([GreedyQueenBee, GreedyQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'greedy_greedy.csv'),
+        ([GreedyQueenBee, GreedyQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'greedy_respectful.csv'),
+        ([GreedyQueenBee, GreedyQueenBee], [SocialBee, SocialBee], GreedyWasp, 'greedy_social.csv'),
+        #([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'conservative_greedy.csv'),
+        ([ConservativeQueenBee, ConservativeQueenBee], [SocialBee, SocialBee], GreedyWasp, 'conservative_social.csv'),
+        ([ConservativeQueenBee, ConservativeQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'conservative_respectful.csv'),
+        #([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp, 'considerate_greedy.csv'),
+        #([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp, 'considerate_social.csv'),
+        #([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp, 'considerate_respectful.csv')
     ]
 
     for queen_bee_classes, bee_classes, wasp_class, filename in scenarios:
