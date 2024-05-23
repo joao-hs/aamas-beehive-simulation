@@ -16,6 +16,10 @@ from bee_colonies.models.wasp import Wasp, WASP_STAY, WASP_UP, WASP_DOWN, WASP_L
 from bee_colonies.models.agent import Agent, manhattan_distance
 from bee_colonies.models.grid import Grid
 
+QUEEN_BEE_VISION_MULTIPLIER = 1
+BEE_VISION_MULTIPLIER = 1
+WASP_VISION_MULTIPLIER = 1
+
 
 def configure_seed(seed):
     if seed is None:
@@ -393,19 +397,23 @@ class BeeColonyEnv(ParallelEnv):
     def __observation(self, agent: Agent):
         if not agent.is_alive:
             return self.__empty_obs()
+        multiplier = 1
         if isinstance(agent, QueenBee):
             center: Coord = agent.spawn_location
+            multiplier = QUEEN_BEE_VISION_MULTIPLIER
         elif isinstance(agent, Bee):
             center: Coord = self.bee_coordinates[agent.queen_id][agent.local_beehive_id]
+            multiplier = BEE_VISION_MULTIPLIER
         elif isinstance(agent, Wasp):
             center: Coord = self.wasp_coordinates[agent.id]
+            multiplier = WASP_VISION_MULTIPLIER
         else:
             raise Exception("Unknown agent type")
 
         visible_cells = [
             (center[0] + i, center[1] + j)
-            for i in range(-self._range_of_vision, self._range_of_vision + 1)
-            for j in range(-self._range_of_vision, self._range_of_vision + 1)
+            for i in range(-self._range_of_vision * multiplier, self._range_of_vision * multiplier + 1)
+            for j in range(-self._range_of_vision * multiplier, self._range_of_vision * multiplier + 1)
             if 0 <= center[0] + i < self._grid_shape[0] and 0 <= center[1] + j < self._grid_shape[1]
         ]
 
