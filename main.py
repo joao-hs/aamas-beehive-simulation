@@ -3,6 +3,7 @@ from bee_colonies.agents.bee.respectful_bee import RespectfulBee
 from bee_colonies.agents.bee.social_bee import SocialBee
 from bee_colonies.agents.queen_bee.conservative_queen_bee import ConservativeQueenBee
 from bee_colonies.agents.queen_bee.considerate_queen_bee import ConsiderateQueenBee
+from bee_colonies.agents.queen_bee.greedy_queen_bee import GreedyQueenBee
 from bee_colonies.agents.wasp.greedy_wasp import GreedyWasp
 from bee_colonies.env.bee_colonies import BeeColonyEnv, configure_seed
 from bee_colonies.models.agent import Agent
@@ -28,6 +29,7 @@ MAX_DISTANCE_FROM_CLUSTER = 25
 MAX_STEPS = 1000
 TIMESTEPS_AFTER_DONE = 5
 FAIR_TESTING = True
+
 
 def agents_observe(env, observations, masks):
     queen_bees_obs, bees_obs, wasps_obs = observations

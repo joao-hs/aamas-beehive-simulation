@@ -46,9 +46,7 @@ class QueenBee(Agent):
     def receive_damage(self, damage):
         """Reduces the health of the Queen Bee by the specified damage amount."""
         self.food_quantity -= damage
-        if self.food_quantity <= 0:
-            self.food_quantity = 0
-            self.is_alive = False
+        # if food is less than 0, the beehive dies in the next timestep
 
     def receive_polen(self):
         """Queen Bee receives polen from a bee."""
@@ -86,8 +84,7 @@ class QueenBee(Agent):
         elif self.health_tendency_counter <= -TENDENCY_THRESHOLD:
             # sacrifices a bee, preferably if they're inside the beehive
             picked_index = self.__pick_bee_to_sacrifice()
-            self.presence_array[picked_index] = 0
-            self.alive_bees -= 1
+            self.dead_bee(picked_index)
             return self.bees[picked_index], False
         return None, False
 
@@ -96,6 +93,10 @@ class QueenBee(Agent):
         bee.mask[BEE_STAY] = 1
         bee.mask[BEE_ATTACK] = 1
         self.presence_array[bee.local_beehive_id] = 1
+
+    def dead_bee(self, id: int):
+        self.alive_bees -= 1
+        self.presence_array[id] = 0
 
     def __purge_bees(self):
         self.alive_bees = 0

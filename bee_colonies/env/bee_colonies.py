@@ -200,13 +200,14 @@ class BeeColonyEnv(ParallelEnv):
                 position: Coord = self.bee_coordinates[colony][bee.local_beehive_id]
                 if position not in self.flower_coordinates:
                     masks[1][colony][bee.local_beehive_id][BEE_PICK] = 0
-                if position not in self.wasp_coordinates:
+                wasp_at_position = self.__wasp_at_position(position)
+                if wasp_at_position is None or not self.wasps[wasp_at_position].is_alive:
                     masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 0
                 
                 if position == bee.beehive_location:
-                    if position in self.wasp_coordinates:
-                        masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 1
-                        continue
+                    # if position in self.wasp_coordinates:
+                    #     masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 1
+                    #     continue
                     if bee.pollen:
                         self.queen_bees[bee.queen_id].presence_array[bee.local_beehive_id] = 1
                         masks[1][colony][bee.local_beehive_id] = np.zeros(bee.action_space.n, dtype=np.int8)
@@ -216,6 +217,7 @@ class BeeColonyEnv(ParallelEnv):
                             # cannot move
                             masks[1][colony][bee.local_beehive_id] = np.zeros(bee.action_space.n, dtype=np.int8)
                             masks[1][colony][bee.local_beehive_id][BEE_STAY] = 1
+                            masks[1][colony][bee.local_beehive_id][BEE_ATTACK] = 1
                         else:
                             # needs to move out of the beehive
                             masks[1][colony][bee.local_beehive_id][BEE_STAY] = 0
@@ -268,8 +270,11 @@ class BeeColonyEnv(ParallelEnv):
         return observations, rewards, masks, done, infos
 
     def render(self):
+        alive_wasps_coordinates = [
+            wasp_coord for index, wasp_coord in enumerate(self.wasp_coordinates) if self.wasps[index].is_alive
+        ]
         self._grid.populate(self.flowers, self.bee_coordinates, self.beehive_coordinates,
-                            self.wasp_coordinates)
+                            alive_wasps_coordinates)
         self._grid.render()
 
     ## Helper functions
@@ -417,7 +422,7 @@ class BeeColonyEnv(ParallelEnv):
                 for colony, colony_coords in enumerate(self.bee_coordinates)
                 for i, bee_coord in enumerate(colony_coords) if bee_coord in visible_cells
             ],
-            "wasps": [wasp_coord for wasp_coord in self.wasp_coordinates if wasp_coord in visible_cells],
+            "wasps": [(wasp_coord, self.wasps[index].is_alive) for index, wasp_coord in enumerate(self.wasp_coordinates) if wasp_coord in visible_cells],
         }
         return observation
 
@@ -444,7 +449,8 @@ class BeeColonyEnv(ParallelEnv):
                 else:
                     # self.bees_by_colony[picked_bee.beehive_id].remove(picked_bee)
                     picked_bee.is_alive = False
-                    self.bee_coordinates[picked_bee.queen_id][picked_bee.local_beehive_id] = picked_bee.beehive_location
+                    self.bee_coordinates[picked_bee.queen_id][picked_bee.local_beehive_id] = None
+                    # queen.dead_bee(...) is called on timestep(), do not call it here
         elif isinstance(agent, Bee):
             position: Coord = self.bee_coordinates[agent.queen_id][agent.local_beehive_id]
             x, y = position
@@ -467,11 +473,12 @@ class BeeColonyEnv(ParallelEnv):
                     if position == wasp_position:
                         if wasp.health > 0:
                             wasp.receive_damage(agent.attack_power)
+                            agent.is_alive = False  # kamikaze
+                            agent.queen.dead_bee(agent.local_beehive_id)
+                            # no need to move to beehive since it's already there
                         else:
                             wasp.is_alive = False
                             
-                        if not wasp.is_alive:
-                            self.wasp_coordinates[wasp.id] = self.__random_available_position()
                         break
 
             elif action == BEE_PICK:  # pick up pollen
@@ -508,12 +515,6 @@ class BeeColonyEnv(ParallelEnv):
                     if position == beehive:
                         if self.queen_bees[queen_bee_id].is_alive:
                             self.queen_bees[queen_bee_id].receive_damage(agent.attack_power)
-                            # After attack, choose to move randomly or to a strategic position
-                        else:
-                            self.queen_bees[queen_bee_id].is_alive = False
-                            new_position = self.__find_new_position_after_attack(agent.id)
-                            self.wasp_coordinates[agent.id] = new_position
-                            break
             else:
                 raise Exception("Unknown action")
         else:

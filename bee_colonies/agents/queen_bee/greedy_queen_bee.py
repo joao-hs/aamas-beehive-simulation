@@ -15,6 +15,8 @@ class GreedyQueenBee(QueenBee):
         """
         if not self.is_alive:
             return apply_mask_to_action(np.zeros(self.action_space.n, dtype=np.int8), self.mask)
-        if len(self.last_observation["wasps"]) != 0:
+        # in observation, wasp is represented by a tuple (distance, alive)
+        nearby_wasps = list(filter(lambda wasp: wasp[1], self.last_observation["wasps"]))
+        if len(nearby_wasps) != 0:
             return apply_mask_to_action(np.ones(self.action_space.n, dtype=np.int8), self.mask)
         return apply_mask_to_action(np.zeros(self.action_space.n, dtype=np.int8), self.mask)
