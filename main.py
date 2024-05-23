@@ -84,9 +84,13 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
         queen_bee_classes[colony](
             id=colony,
             bees=[
-                bee_classes[colony](local_beehive_id=i) for i in range(N_BEES_PER_COLONY[colony])
+                bee_classes[colony](
+                    local_beehive_id=i, cluster_center_distance=MAX_DISTANCE_FROM_CLUSTER
+                ) for i in range(N_BEES_PER_COLONY[colony])
             ],
-            new_bee_class=bee_classes[colony]
+            new_bee_class=bee_classes[colony],
+            n_clusters=NUM_FLOWER_CLUSTERS,
+            cluster_center_distance=MAX_DISTANCE_FROM_CLUSTER
         ) for colony in range(N_COLONIES)
 
     ]
@@ -99,7 +103,7 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
         for bee in colony_bees:
             bee.set_queen(queen_bees[colony])
 
-    wasps: list[Wasp] = [wasp_class(i) for i in range(N_WASPS)]
+    wasps: list[Wasp] = [wasp_class(i, NUM_FLOWER_CLUSTERS, MAX_DISTANCE_FROM_CLUSTER) for i in range(N_WASPS)]
 
     env = BeeColonyEnv(queen_bees, bees, wasps, seed=SEED, grid_shape=(75, 75), n_wasps=N_WASPS,
                        n_bees_per_colony=N_BEES_PER_COLONY, flower_density=FLOWER_PROB,
@@ -110,8 +114,8 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
 
 def main():
     environments = [
-        create_scenario([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
-        create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
+        # create_scenario([ConservativeQueenBee, ConservativeQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
+        # create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [GreedyBee, GreedyBee], GreedyWasp),
         create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [SocialBee, SocialBee], GreedyWasp),
         create_scenario([ConsiderateQueenBee, ConsiderateQueenBee], [RespectfulBee, RespectfulBee], GreedyWasp),
     ]

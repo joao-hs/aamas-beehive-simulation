@@ -1,3 +1,7 @@
+from copy import copy
+
+from sklearn.cluster import KMeans
+
 from bee_colonies.models.bee import Bee, BEE_STAY, BEE_ATTACK
 from bee_colonies.models.agent import Agent
 import numpy as np
@@ -11,10 +15,15 @@ IS_GOOD_HEALTH = lambda health_score: health_score > 25
 IS_BAD_HEALTH = lambda health_score: health_score < 15
 TENDENCY_THRESHOLD = 10
 HEALTH_SCORE_FUNCTION = lambda food_quantity, no_bees: food_quantity // no_bees if no_bees > 0 else 0
+# CLUSTER DISCOVERY ARGS
+RANDOM_STATE = 0
+N_INIT = 5
+MAX_ITER = 20
+ALGORITHM = "elkan"
 
 
 class QueenBee(Agent):
-    def __init__(self, id: int, bees: list[Bee], new_bee_class):
+    def __init__(self, id: int, bees: list[Bee], new_bee_class, n_clusters, cluster_center_distance):
         super().__init__()
         n_bees = len(bees)
         self.id = id
@@ -29,9 +38,16 @@ class QueenBee(Agent):
         self.action_space = MultiBinary(n_bees)
         self.health_tendency_counter = 0
         self.new_bee = new_bee_class
+        self.n_clusters = n_clusters
+        self.cluster_center_distance = cluster_center_distance
         # used by social bees
         self.pursuing_flower_map = dict()
         self.section_size = None
+        # to be inherited information
+        self.seen_flowers = set()
+        self.expected_clusters = None
+        self.model = KMeans(n_clusters=n_clusters, random_state=RANDOM_STATE, n_init=N_INIT, max_iter=MAX_ITER,
+                            algorithm=ALGORITHM)
 
     def action(self) -> np.ndarray:
         """
@@ -53,10 +69,20 @@ class QueenBee(Agent):
         self.received += 1
         self.food_quantity += FOOD_QUANTITY_PER_POLEN
 
+    def share_expected_clusters(self):
+        return copy(self.expected_clusters)
+
     def timestep(self) -> tuple[Bee, bool]:
         """Queen Bee's health decreases by the consumed food per turn per bee."""
         if not self.is_alive:
             return None, False
+
+        # cluster computation
+        seen_flowers_array = np.array(list(self.seen_flowers))
+        if seen_flowers_array.size > self.n_clusters:
+            self.model.fit(seen_flowers_array)
+            self.expected_clusters = self.model.cluster_centers_
+
         total_no_bees = len(self.bees)
         if self.alive_bees <= 0:
             self.is_alive = False
@@ -76,7 +102,7 @@ class QueenBee(Agent):
             self.health_tendency_counter = 0
         if self.health_tendency_counter >= TENDENCY_THRESHOLD:
             self.presence_array = np.append(self.presence_array, 1)
-            new_bee = self.new_bee(total_no_bees)
+            new_bee = self.new_bee(total_no_bees, self.cluster_center_distance)
             new_bee.set_queen(self)
             self.action_space = MultiBinary(total_no_bees + 1)
             self.alive_bees += 1
@@ -93,6 +119,7 @@ class QueenBee(Agent):
         bee.mask[BEE_STAY] = 1
         bee.mask[BEE_ATTACK] = 1
         self.presence_array[bee.local_beehive_id] = 1
+        self.seen_flowers.update(bee.searching_guide.share())
 
     def dead_bee(self, id: int):
         self.alive_bees -= 1

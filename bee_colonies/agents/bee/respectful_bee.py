@@ -5,13 +5,10 @@ import numpy as np
 
 from bee_colonies.models.searching_guide import SearchingGuide
 
-RANDOM_WALK_INTENT = 3
-
 
 class RespectfulBee(Bee):
-    def __init__(self, local_beehive_id):
-        super().__init__(local_beehive_id)
-        self.searching_guide = SearchingGuide([BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT], RANDOM_WALK_INTENT)
+    def __init__(self, local_beehive_id, cluster_center_distance):
+        super().__init__(local_beehive_id, cluster_center_distance)
 
     def action(self) -> int:
         if not self.is_alive:

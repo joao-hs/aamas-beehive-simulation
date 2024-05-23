@@ -6,8 +6,8 @@ from bee_colonies.models.bee import Bee
 
 
 class GreedyQueenBee(QueenBee):
-    def __init__(self, id: int, bees: list[Bee], new_bee_class):
-        super().__init__(id, bees, new_bee_class)
+    def __init__(self, id: int, bees: list[Bee], new_bee_class, n_clusters, cluster_center_distance):
+        super().__init__(id, bees, new_bee_class, n_clusters, cluster_center_distance)
 
     def action(self) -> np.ndarray:
         """

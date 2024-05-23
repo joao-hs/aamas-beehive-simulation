@@ -1,9 +1,8 @@
 import numpy as np
-
-from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
-import numpy as np
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
+
+from bee_colonies.models.searching_guide import SearchingGuide
 
 Coord = tuple[int, int]
 
@@ -12,10 +11,11 @@ BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, BEE_DROP,
 
 # FINE TUNE ARGUMENTS
 BEE_ATTACK_POWER = 2
+RANDOM_WALK_INTENT = 3
 
 
 class Bee(Agent):
-    def __init__(self, local_beehive_id):
+    def __init__(self, local_beehive_id, cluster_center_distance):
         super().__init__()
         self.beehive_location = None
         self.is_alive = True
@@ -25,6 +25,14 @@ class Bee(Agent):
         self.local_beehive_id = local_beehive_id
         self.attack_power = BEE_ATTACK_POWER
         self.action_space = Discrete(BEE_N_ACTIONS)
+        self.searching_guide = SearchingGuide(
+            [BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT], RANDOM_WALK_INTENT, cluster_center_distance
+        )
+
+    def see(self, observation: dict, mask: np.ndarray = None):
+        self.last_observation = observation
+        self.mask = mask
+        self.searching_guide.retrieve(list(map(lambda x: x.position, self.last_observation["flowers"])))
 
     def set_queen(self, queen):
         self.queen_id = queen.id
@@ -76,12 +84,13 @@ def move_towards(src: Coord, dest: Coord):
     else:
         return BEE_LEFT if y2 < y1 else BEE_RIGHT
 
+
 def move_away(src: Coord, away: Coord):
     x1, y1 = src
     x2, y2 = away
     dx, dy = x2 - x1, y2 - y1
 
     if dx > dy:
-        return BEE_UP if dx > 0 else BEE_RIGHT
+        return BEE_DOWN if x2 < x1 else BEE_UP
     else:
-        return BEE_LEFT if dy > 0 else BEE_LEFT
+        return BEE_RIGHT if y2 < y1 else BEE_LEFT

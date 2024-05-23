@@ -62,7 +62,7 @@ class Agent(ABC):
     def set_spawn(self, spawn_location: Coord):
         self.spawn_location = spawn_location
 
-    def see(self, observation: np.ndarray, mask: np.ndarray = None):
+    def see(self, observation: dict, mask: np.ndarray = None):
         self.last_observation = observation
         self.mask = mask
 

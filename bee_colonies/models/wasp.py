@@ -1,7 +1,11 @@
 import numpy as np
+from sklearn.cluster import KMeans
+
 from bee_colonies.models.queen_bee import QueenBee
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
+
+from bee_colonies.models.searching_guide import SearchingGuide
 
 # 0: stay still, 1: move up, 2: move down, 3: move left, 4: move right, 5: attack
 WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT, WASP_ATTACK, WASP_N_ACTIONS = range(7)
@@ -9,18 +13,32 @@ WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT, WASP_ATTACK, WASP_N_ACTION
 # FINE TUNE ARGUMENTS
 WASP_LIFE_POINTS = 20
 WASP_ATTACK_POWER = 20
+RANDOM_WALK_INTENT = 3
+# CLUSTER DISCOVERY ARGS
+RANDOM_STATE = 0
+N_INIT = 5
+MAX_ITER = 20
+ALGORITHM = "elkan"
 
 
 Coord = tuple[int, int]
 
 class Wasp(Agent):
-    def __init__(self, id):
+    def __init__(self, id, n_clusters, cluster_center_distance):
         super().__init__()
         self.id = id
         self.health = WASP_LIFE_POINTS
         self.is_alive = True
         self.attack_power = WASP_ATTACK_POWER
         self.action_space = Discrete(WASP_N_ACTIONS)
+        self.model = KMeans(n_clusters=n_clusters, random_state=RANDOM_STATE, n_init=N_INIT, max_iter=MAX_ITER,
+                            algorithm=ALGORITHM)
+        self.n_clusters = n_clusters
+        self.cluster_center_distance = cluster_center_distance
+        self.expected_clusters = None
+        self.searching_guide = SearchingGuide(
+            [WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT], RANDOM_WALK_INTENT, cluster_center_distance
+        )
 
     def receive_damage(self, damage):
         """
@@ -37,6 +55,16 @@ class Wasp(Agent):
         if queen_bee:
             queen_bee.receive_damage(self.attack_power)
 
+    def see(self, observation: dict, mask: np.ndarray = None):
+        self.last_observation = observation
+        self.mask = mask
+        self.searching_guide.retrieve(list(map(lambda x: x.position, self.last_observation["flowers"])))
+        flowers_array = np.array(list(self.searching_guide.share()))
+        if flowers_array.size <= self.n_clusters:
+            return
+        self.model.fit(flowers_array)
+        self.expected_clusters = self.model.cluster_centers_
+
     def action(self) -> int:
         """
         This method should be implemented by the child class.
@@ -52,6 +80,7 @@ class Wasp(Agent):
         if not self.is_alive:
             rep = f"[{rep}]"
         return rep
+
 
 def move_towards(src: Coord, dest: Coord):
     x1, y1 = src

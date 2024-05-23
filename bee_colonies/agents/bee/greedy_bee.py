@@ -1,13 +1,12 @@
 import numpy as np
 from bee_colonies.models.bee import Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, \
-    BEE_DROP, BEE_N_ACTIONS, move_away, move_towards
+    BEE_DROP, BEE_N_ACTIONS, move_away, move_towards, Coord
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 
 
-
 class GreedyBee(Bee):
-    def __init__(self, local_beehive_id):
-        super().__init__(local_beehive_id)
+    def __init__(self, local_beehive_id, cluster_center_distance):
+        super().__init__(local_beehive_id, cluster_center_distance)
 
     def action(self) -> int:
         """

@@ -1,16 +1,12 @@
 from bee_colonies.env.bee_colonies import WASP_DOWN, WASP_UP, WASP_RIGHT, WASP_LEFT, WASP_STAY
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 from bee_colonies.models.wasp import WASP_ATTACK, Wasp, move_towards
-from bee_colonies.models.searching_guide import SearchingGuide
-import numpy as np
 
-RANDOM_WALK_INTENT = 3
 
 class GreedyWasp(Wasp):
-    def __init__(self, id):
-        super().__init__(id)
-        self.searching_guide = SearchingGuide([WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT], RANDOM_WALK_INTENT)
-    
+    def __init__(self, id, n_clusters, cluster_center_distance):
+        super().__init__(id, n_clusters, cluster_center_distance)
+
     def action(self) -> int:
         # If the wasp can see a beehive, it will choose an action to move towards or attack the beehive
         if not self.is_alive:
@@ -26,7 +22,7 @@ class GreedyWasp(Wasp):
 
         else:
             # Move randomly if no beehive is visible
-            return apply_mask_to_action(self.searching_guide.walk(self.last_observation["position"]), self.mask)
+            return apply_mask_to_action(self.searching_guide.walk_to_cluster(self.last_observation["position"]), self.mask)
     
     def _find_nearest_beehive(self):
         # Filter the list to include only alive beehives before sorting

@@ -3,8 +3,12 @@ Farama-Notifications==0.0.4
 gym==0.26.2
 gym-notices==0.0.8
 gymnasium==0.29.1
+joblib==1.4.2
 numpy==1.26.4
 pettingzoo==1.24.3
 pygame==2.5.2
 pyglet==2.0.15
+scikit-learn==1.5.0
+scipy==1.13.1
+threadpoolctl==3.5.0
 typing_extensions==4.11.0

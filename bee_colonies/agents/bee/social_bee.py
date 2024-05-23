@@ -3,19 +3,17 @@ from bee_colonies.models.bee import BEE_N_ACTIONS, Bee, BEE_STAY, BEE_UP, BEE_DO
     BEE_PICK, \
     BEE_DROP, move_towards, move_away, Coord
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
-from bee_colonies.models.searching_guide import SearchingGuide
 
 # FINE TUNE ARGUMENTS
 KEEP_AWAY_FROM_BEEHIVE_DISTANCE = 5
-RANDOM_WALK_INTENT = 3
 
 
 class SocialBee(Bee):
-    def __init__(self, local_beehive_id):
-        super().__init__(local_beehive_id)
+    def __init__(self, local_beehive_id, cluster_center_distance):
+        super().__init__(local_beehive_id, cluster_center_distance)
         self.picked_pollen_from = None
         self.target_flower = None
-        self.searching_guide = SearchingGuide([BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT], RANDOM_WALK_INTENT)
+        self.out_of_beehive_for = 0
 
     def action(self) -> int:
         """
@@ -36,10 +34,12 @@ class SocialBee(Bee):
 
         if self.pollen:
             if position == self.beehive_location:
+                self.out_of_beehive_for = 0
                 self.queen.pursuing_flower_map[self.__get_section(self.picked_pollen_from.position)].remove(self.picked_pollen_from)
                 self.target_flower = None
                 self.picked_pollen_from = None
                 return apply_mask_to_action(BEE_DROP, self.mask)
+            self.out_of_beehive_for += 1
             return apply_mask_to_action(move_towards(position, self.beehive_location), self.mask)
 
         if self.target_flower is not None:
@@ -70,4 +70,4 @@ class SocialBee(Bee):
         """
         if manhattan_distance(position, self.beehive_location) < KEEP_AWAY_FROM_BEEHIVE_DISTANCE:
             return move_away(position, self.beehive_location)
-        return self.searching_guide.walk(position)
+        return self.searching_guide.walk_to_cluster(position)

@@ -439,8 +439,18 @@ class BeeColonyEnv(ParallelEnv):
         if not agent.is_alive:
             return
         if isinstance(agent, QueenBee):
+            moving_out_bees = np.logical_xor(agent.presence_array, action)  # was 1 now is 0
             agent.presence_array = np.multiply(agent.presence_array, action)
             picked_bee, is_new = agent.timestep()
+
+            # sharing expected cluster centers to each moving out bee
+            for bee_id in moving_out_bees:
+                self.bees_by_colony[agent.id][bee_id].searching_guide.set_clusters(agent.expected_clusters)
+                # here, we could share all seen flowers with every leaving bee
+                # would result in having to implement a better search algorithm to leverage known flowers and
+                # exploration
+
+            # spawning or killing a bee due to health
             if picked_bee:
                 if is_new:
                     if picked_bee not in self.bees_by_colony[picked_bee.queen_id]:
