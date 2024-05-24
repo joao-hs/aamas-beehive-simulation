@@ -1,8 +1,10 @@
 import numpy as np
+from config import get_config
 
-TIME_TO_RESTORE_POLLEN = 5
-SPREAD_DIVIDER = 1
-SPREAD_SCALE = 1
+CONFIG = get_config()
+TIME_TO_RESTORE_POLLEN = CONFIG["time_to_restore_pollen"]
+SPREAD_DIVIDER = CONFIG["spread_divider"]
+SPREAD_SCALE = CONFIG["spread_scale"]
 
 Coord = tuple[int, int]
 

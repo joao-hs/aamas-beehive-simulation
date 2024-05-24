@@ -6,10 +6,12 @@ import numpy as np
 from bee_colonies.models.agent import apply_mask_to_action
 from bee_colonies.models.queen_bee import QueenBee, HEALTH_SCORE_FUNCTION, IS_GOOD_HEALTH, IS_BAD_HEALTH
 from bee_colonies.models.bee import Bee
+from config import get_config
 
-KEEP_RATIO_GOOD_HEALTH = 25
-KEEP_RATIO_OK_HEALTH = 15
-KEEP_RATIO_BAD_HEALTH = 5
+CONFIG = get_config()
+KEEP_RATIO_GOOD_HEALTH = CONFIG["keep_ratio_good_health"]
+KEEP_RATIO_OK_HEALTH = CONFIG["keep_ratio_ok_health"]
+KEEP_RATIO_BAD_HEALTH = CONFIG["keep_ratio_bad_health"]
 
 
 class ConsiderateQueenBee(QueenBee):

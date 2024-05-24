@@ -2,14 +2,16 @@ from bee_colonies.models.bee import Bee, BEE_STAY, BEE_ATTACK
 from bee_colonies.models.agent import Agent
 import numpy as np
 from gym.spaces import MultiBinary
+from config import get_config
 
+CONFIG = get_config()
 # FINE TUNE ARGUMENTS
-STARTING_FOOD_QUANTITY_PER_BEE = 100
-CONSUMED_FOOD_PER_TURN_PER_BEE = 1
-FOOD_QUANTITY_PER_POLEN = 100
-IS_GOOD_HEALTH = lambda health_score: health_score > 25
-IS_BAD_HEALTH = lambda health_score: health_score < 15
-TENDENCY_THRESHOLD = 10
+STARTING_FOOD_QUANTITY_PER_BEE = CONFIG["starting_food_quantity_per_bee"]
+CONSUMED_FOOD_PER_TURN_PER_BEE = CONFIG["consumed_food_per_turn_per_bee"]
+FOOD_QUANTITY_PER_POLLEN = CONFIG["food_quantity_per_pollen"]
+IS_GOOD_HEALTH = lambda health_score: health_score > CONFIG["good_health_threshold"]
+IS_BAD_HEALTH = lambda health_score: health_score < CONFIG["bad_health_threshold"]
+TENDENCY_THRESHOLD = CONFIG["tendency_threshold"]
 HEALTH_SCORE_FUNCTION = lambda food_quantity, no_bees: food_quantity // no_bees if no_bees > 0 else 0
 
 
@@ -51,7 +53,7 @@ class QueenBee(Agent):
     def receive_polen(self):
         """Queen Bee receives polen from a bee."""
         self.received += 1
-        self.food_quantity += FOOD_QUANTITY_PER_POLEN
+        self.food_quantity += FOOD_QUANTITY_PER_POLLEN
 
     def timestep(self) -> tuple[Bee, bool]:
         """Queen Bee's health decreases by the consumed food per turn per bee."""

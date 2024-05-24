@@ -4,10 +4,12 @@ from bee_colonies.models.bee import BEE_N_ACTIONS, Bee, BEE_STAY, BEE_UP, BEE_DO
     BEE_DROP, move_towards, move_away, Coord
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 from bee_colonies.models.searching_guide import SearchingGuide
+from config import get_config
 
 # FINE TUNE ARGUMENTS
-KEEP_AWAY_FROM_BEEHIVE_DISTANCE = 5
-RANDOM_WALK_INTENT = 3
+CONFIG = get_config()
+KEEP_AWAY_FROM_BEEHIVE_DISTANCE = CONFIG["keep_away_from_beehive_distance"]
+RANDOM_WALK_INTENT = CONFIG["random_walk_intent"]
 
 
 class SocialBee(Bee):
