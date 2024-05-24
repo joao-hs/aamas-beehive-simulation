@@ -27,7 +27,7 @@ class Grid:
         self.cell_size = min(600 // width, 600 // height)
         self.clock = pg.time.Clock()
         pg.init()
-        self.screen = pg.display.set_mode(self.screen_size, display=1)
+        self.screen = pg.display.set_mode(self.screen_size)
         pg.display.set_caption("Bee Colonies")
         self.screen.fill(BACKGROUND_COLOR)
 
