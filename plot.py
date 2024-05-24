@@ -13,8 +13,8 @@ filenames = [
     #'data_impact_predation/considerate_greedy.csv',
     #'data_impact_predation/considerate_respectful.csv',
     #'data_impact_predation/considerate_social.csv',
-    'data_impact_predation/40_wasps_min_dist_15_considerate_respectful.csv',
-    'data_impact_predation/40_wasps_min_dist_15_greedy_respectful.csv',
+    'data/data_impact_predation/40_wasps_min_dist_15_considerate_respectful.csv',
+    'data/data_impact_predation/40_wasps_min_dist_15_greedy_respectful.csv',
 ]
 
 # Read each file and add a scenario label
@@ -22,7 +22,7 @@ dataframes = []
 for file in filenames:
     df = pd.read_csv(file)
     df = df[df['timestep'] % 5 == 0]  # Filter to keep only rows where timestep is a multiple of 10
-    df['scenario'] = file.replace('data_impact_predation/', '').replace('.csv', '')  # Add scenario as a column with simplified names
+    df['scenario'] = file.replace('data/data_impact_predation/', '').replace('.csv', '')  # Add scenario as a column with simplified names
     dataframes.append(df)
 
 # Concatenate all dataframes into one
@@ -36,7 +36,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Number of Alive Bees in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots_impact_predation/num_alive_bees.png')
+plt.savefig('plots/plots_impact_predation/num_alive_bees.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -46,7 +46,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Number of Dead Bees in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots_impact_predation/num_dead_bees.png')
+plt.savefig('plots/plots_impact_predation/num_dead_bees.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -56,7 +56,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Food Stored in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots_impact_predation/food_stored.png')
+plt.savefig('plots/plots_impact_predation/food_stored.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -66,7 +66,7 @@ plt.xlabel('Timestep')
 plt.ylabel('Health of Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots_impact_predation/health.png')
+plt.savefig('plots/plots_impact_predation/health.png')
 plt.close()
 
 plt.figure(figsize=(12, 8))
@@ -76,5 +76,5 @@ plt.xlabel('Timestep')
 plt.ylabel('Number of Bees Present in Queen Bee')
 plt.legend(title='Scenario')
 plt.grid(True)
-plt.savefig('plots_impact_predation/num_bees_present.png')
+plt.savefig('plots/plots_impact_predation/num_bees_present.png')
 plt.close()
