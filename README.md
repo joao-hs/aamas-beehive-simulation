@@ -1,6 +1,6 @@
 # AAMS Beehive Simulation
 
-This project is a simulation of a beehive using for the AAMS (Autonomous Agents and Multi-Agent Systems) course.
+This project is a simulation of n-beehives environment for the AAMAS (Autonomous Agents and Multi-Agent Systems) course.
 
 ## Installation
 
@@ -35,7 +35,7 @@ pip install -r requirements.txt
 To run the simulation, execute the following command:
 
 ```shell
-python main.py
+python main.py <path/to/config/file.json>
 ```
 
-You may change `main.py` to explore different scenarios.
+You can create your own configuration file based on the `config/base.json` file, in order to explore different scenarios.

@@ -193,7 +193,7 @@ def main():
     queen_bee_classes, bee_classes, wasp_class = parse_classes()
     # scenario: ([queen_bee_class1, queen_bee_class2, ..., queen_bee_classN], [bee_class1, bee_class2, ..., bee_classN], wasp_class, filename)
     scenarios = [
-        (queen_bee_classes[scenario], bee_classes[scenario], wasp_class[scenario], CONFIG["out_csv_path"])
+        (queen_bee_classes[scenario], bee_classes[scenario], wasp_class[scenario], CONFIG["out_csv_path"][scenario])
         for scenario in range(num_scenarios)
     ]
 
