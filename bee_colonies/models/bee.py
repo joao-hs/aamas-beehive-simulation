@@ -4,6 +4,9 @@ from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 import numpy as np
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
+from config import get_config
+
+CONFIG = get_config()
 
 Coord = tuple[int, int]
 
@@ -11,7 +14,7 @@ Coord = tuple[int, int]
 BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, BEE_DROP, BEE_N_ACTIONS = range(9)
 
 # FINE TUNE ARGUMENTS
-BEE_ATTACK_POWER = 1
+BEE_ATTACK_POWER = CONFIG["bee_attack_power"]
 
 
 class Bee(Agent):

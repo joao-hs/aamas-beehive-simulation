@@ -2,9 +2,11 @@ from bee_colonies.env.bee_colonies import WASP_DOWN, WASP_UP, WASP_RIGHT, WASP_L
 from bee_colonies.models.agent import apply_mask_to_action, manhattan_distance
 from bee_colonies.models.wasp import WASP_ATTACK, Wasp, move_towards
 from bee_colonies.models.searching_guide import SearchingGuide
-import numpy as np
+from config import get_config
 
-RANDOM_WALK_INTENT = 3
+CONFIG = get_config()
+RANDOM_WALK_INTENT = CONFIG["random_walk_intent"]
+
 
 class GreedyWasp(Wasp):
     def __init__(self, id):

@@ -15,10 +15,12 @@ from bee_colonies.models.wasp import Wasp, WASP_STAY, WASP_UP, WASP_DOWN, WASP_L
     WASP_N_ACTIONS
 from bee_colonies.models.agent import Agent, manhattan_distance
 from bee_colonies.models.grid import Grid
+from config import get_config
 
-QUEEN_BEE_VISION_MULTIPLIER = 1
-BEE_VISION_MULTIPLIER = 1
-WASP_VISION_MULTIPLIER = 2
+CONFIG = get_config()
+QUEEN_BEE_VISION_MULTIPLIER = CONFIG["queen_bee_vision_multiplier"]
+BEE_VISION_MULTIPLIER = CONFIG["bee_vision_multiplier"]
+WASP_VISION_MULTIPLIER = CONFIG["wasp_vision_multiplier"]
 
 
 def configure_seed(seed):

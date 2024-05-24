@@ -4,8 +4,10 @@ from bee_colonies.models.bee import BEE_ATTACK, BEE_N_ACTIONS, BEE_STAY, Bee, BE
 import numpy as np
 
 from bee_colonies.models.searching_guide import SearchingGuide
+from config import get_config
 
-RANDOM_WALK_INTENT = 3
+CONFIG = get_config()
+RANDOM_WALK_INTENT = CONFIG["random_walk_intent"]
 
 
 class RespectfulBee(Bee):

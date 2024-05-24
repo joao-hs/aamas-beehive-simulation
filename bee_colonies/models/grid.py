@@ -1,18 +1,20 @@
 import numpy as np
 import pygame as pg
+from config import get_config
 
+CONFIG = get_config()
 # dark green
-BACKGROUND_COLOR = (0, 100, 0)
+BACKGROUND_COLOR = tuple(CONFIG["background_color"])
 
 COLORS = {
-    "F": (255, 182, 193),  # pink - flower
-    "R": (88, 57, 39),  # brown - flower regeneration pollen
-    "H": (255, 0, 0),  # red - beehive
-    "W": (255, 140, 0),  # orange - wasp
-    "B": (255, 255, 0)  # yellow - bee
+    "F": tuple(CONFIG["flower_color"]),  # pink - flower
+    "R": tuple(CONFIG["restoring_pollen_flower_color"]),  # brown - flower regeneration pollen
+    "H": tuple(CONFIG["hive_color"]),  # red - beehive
+    "W": tuple(CONFIG["wasp_color"]),  # orange - wasp
+    "B": tuple(CONFIG["bee_color"]),  # yellow - bee
 }
 
-TICK_RATE = 200
+TICK_RATE = CONFIG["tick_rate"]
 
 
 class Grid:
@@ -25,7 +27,7 @@ class Grid:
         self.cell_size = min(600 // width, 600 // height)
         self.clock = pg.time.Clock()
         pg.init()
-        self.screen = pg.display.set_mode(self.screen_size)
+        self.screen = pg.display.set_mode(self.screen_size, display=1)
         pg.display.set_caption("Bee Colonies")
         self.screen.fill(BACKGROUND_COLOR)
 

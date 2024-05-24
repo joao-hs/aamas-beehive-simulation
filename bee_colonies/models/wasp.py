@@ -2,13 +2,15 @@ import numpy as np
 from bee_colonies.models.queen_bee import QueenBee
 from bee_colonies.models.agent import Agent
 from gym.spaces import Discrete
+from config import get_config
 
+CONFIG = get_config()
 # 0: stay still, 1: move up, 2: move down, 3: move left, 4: move right, 5: attack
 WASP_STAY, WASP_UP, WASP_DOWN, WASP_LEFT, WASP_RIGHT, WASP_ATTACK, WASP_N_ACTIONS = range(7)
 
 # FINE TUNE ARGUMENTS
-WASP_LIFE_POINTS = 50
-WASP_ATTACK_POWER = 10
+WASP_LIFE_POINTS = CONFIG["wasp_life_points"]
+WASP_ATTACK_POWER = CONFIG["wasp_attack_power"]
 
 
 Coord = tuple[int, int]

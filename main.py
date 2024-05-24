@@ -1,3 +1,18 @@
+import sys
+import os
+from copy import copy
+
+from config import read_config
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+        CONFIG = read_config(config_path)
+        # write config path as env variable
+        os.environ["CONFIG_PATH"] = config_path
+    else:
+        print("Usage: python main.py <config_file_path>")
+
 from bee_colonies.agents.bee.greedy_bee import GreedyBee
 from bee_colonies.agents.bee.respectful_bee import RespectfulBee
 from bee_colonies.agents.bee.social_bee import SocialBee
@@ -15,21 +30,24 @@ from bee_colonies.models.queen_bee import QueenBee
 from bee_colonies.models.wasp import Wasp
 import pandas as pd
 
-RANDOM = True
-GREEDY = False
-COLAB = False
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+        CONFIG = read_config(config_path)
+    else:
+        print("Usage: python main.py <config_file_path>")
 
-SEED = 42
-N_BEES_PER_COLONY = (20,)
+SEED = CONFIG["seed"]
+N_BEES_PER_COLONY = tuple(CONFIG["n_bees_per_colony"])
 N_COLONIES = len(N_BEES_PER_COLONY)
-N_WASPS = 5
-FLOWER_PROB = 0.1
-VISION = 3
-NUM_FLOWER_CLUSTERS = 0 # for uniform distribution set clusters to 0
-MAX_DISTANCE_FROM_CLUSTER = 100
-MAX_STEPS = 1000
-TIMESTEPS_AFTER_DONE = 5
-FAIR_TESTING = True
+N_WASPS = CONFIG["n_wasps"]
+FLOWER_PROB = CONFIG["flower_prob"]
+VISION = CONFIG["vision"]
+NUM_FLOWER_CLUSTERS = CONFIG["num_flower_clusters"]  # for uniform distribution set clusters to 0
+MAX_DISTANCE_FROM_CLUSTER = CONFIG["max_distance_from_cluster"]
+MAX_STEPS = CONFIG["max_steps"]
+TIMESTEPS_AFTER_DONE = CONFIG["timesteps_after_done"]
+FAIR_TESTING = CONFIG["fair_testing"]
 
 
 def agents_observe(env, observations, masks):
@@ -59,7 +77,7 @@ def compute_actions(env):
 def run_env(env, filename):
     columns = ['timestep', 'alive_queen1', 'dead_queen1', 'food_queen1', 'health_queen1', 'presence_queen1']
     simulation_data = pd.DataFrame(columns=columns)
-    
+
     observations = env.reset()
     masks = env.init_masks()
     agents_observe(env, observations, masks)
@@ -83,7 +101,7 @@ def run_env(env, filename):
             'health_queen1': info['health'][0],
             'presence_queen1': info['presence_in_beehive'][0],
         }
-        
+
         simulation_data = simulation_data._append(new_row, ignore_index=True)
 
         if done:
@@ -91,10 +109,9 @@ def run_env(env, filename):
         agents_observe(env, observations, masks)
         env.render()
         print('-' * 20)
-    
+
     # Use the filename parameter to save the DataFrame to a specific file
     simulation_data.to_csv(filename, index=False)
-
 
 
 def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
@@ -126,18 +143,58 @@ def create_scenario(queen_bee_classes, bee_classes, wasp_class) -> BeeColonyEnv:
     return env
 
 
+def parse_classes():
+    queen_bee_classes_names = CONFIG["queen_bee_classes"]
+    queen_bee_classes = []
+    for scenario in range(CONFIG["num_scenarios"]):
+        scenario_classes = []
+        for class_name in queen_bee_classes_names[scenario]:
+            if class_name == "ConservativeQueenBee":
+                scenario_classes.append(ConservativeQueenBee)
+            elif class_name == "ConsiderateQueenBee":
+                scenario_classes.append(ConsiderateQueenBee)
+            elif class_name == "GreedyQueenBee":
+                scenario_classes.append(GreedyQueenBee)
+            else:
+                print("Unknown queen bee:", class_name)
+                quit()
+        queen_bee_classes.append(copy(scenario_classes))
+
+    bee_classes_names = CONFIG["bee_classes"]
+    bee_classes = []
+    for scenario in range(CONFIG["num_scenarios"]):
+        scenario_classes = []
+        for class_name in bee_classes_names[scenario]:
+            if class_name == "GreedyBee":
+                scenario_classes.append(GreedyBee)
+            elif class_name == "RespectfulBee":
+                scenario_classes.append(RespectfulBee)
+            elif class_name == "SocialBee":
+                scenario_classes.append(SocialBee)
+            else:
+                print("Unknown bee:", class_name)
+                quit()
+        bee_classes.append(copy(scenario_classes))
+
+    wasp_class_names = CONFIG["wasp_class"]
+    wasp_classes = []
+    for scenario in range(CONFIG["num_scenarios"]):
+        if wasp_class_names[scenario] == "GreedyWasp":
+            wasp_classes.append(GreedyWasp)
+        else:
+            print("Unknown wasp:", wasp_class_names[scenario])
+            quit()
+
+    return queen_bee_classes, bee_classes, wasp_classes
+
+
 def main():
+    num_scenarios = CONFIG["num_scenarios"]
+    queen_bee_classes, bee_classes, wasp_class = parse_classes()
     # scenario: ([queen_bee_class1, queen_bee_class2, ..., queen_bee_classN], [bee_class1, bee_class2, ..., bee_classN], wasp_class, filename)
     scenarios = [
-        # ([GreedyQueenBee], [GreedyBee], GreedyWasp, 'test_env1.V/greedy_greedy.csv'),
-        # ([GreedyQueenBee], [RespectfulBee], GreedyWasp, 'weak_wasp/greedy_respectful.csv'),
-        # ([GreedyQueenBee], [SocialBee], GreedyWasp, 'weak_wasp/greedy_social.csv'),
-        ([ConservativeQueenBee], [GreedyBee], GreedyWasp, 'test_env1.V/conservative_greedy.csv'),
-        # ([ConservativeQueenBee], [SocialBee], GreedyWasp, 'test_env1.V/conservative_social.csv'),
-        # ([ConservativeQueenBee], [RespectfulBee], GreedyWasp, 'weak_wasp/conservative_respectful.csv'),
-        # ([ConsiderateQueenBee], [GreedyBee], GreedyWasp, 'weak_wasp/considerate_greedy.csv'),
-        # ([ConsiderateQueenBee], [SocialBee], GreedyWasp, 'weak_wasp/considerate_social.csv'),
-        # ([ConsiderateQueenBee], [RespectfulBee], GreedyWasp, 'weak_wasp/considerate_respectful.csv')
+        (queen_bee_classes[scenario], bee_classes[scenario], wasp_class[scenario], CONFIG["out_csv_path"])
+        for scenario in range(num_scenarios)
     ]
 
     for queen_bee_classes, bee_classes, wasp_class, filename in scenarios:
