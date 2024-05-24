@@ -1,0 +1,57 @@
+{
+    "num_scenarios": 1,
+    "queen_bee_classes": [
+        ["ConsiderateQueenBee"]
+    ],
+    "bee_classes": [
+        ["SocialBee"]
+    ],
+    "wasp_class": [
+        "GreedyWasp"
+    ],
+    "out_csv_path": [
+        "out.csv"
+    ],
+    "seed": 4,
+    "n_bees_per_colony": [600],
+    "n_wasps": 50,
+    "flower_prob": 0.1,
+    "vision": 3,
+    "num_flower_clusters": 3,
+    "max_distance_from_cluster": 25,
+    "max_steps": 100,
+    "timesteps_after_done": 5,
+    "fair_testing": true,
+
+    "time_to_restore_pollen": 5,
+    "spread_divider": 7,
+    "spread_scale": 0.1,
+
+    "random_walk_intent": 3,
+    "keep_away_from_beehive_distance": 5,
+    "bee_vision_multiplier": 1,
+    "bee_attack_power": 1,
+
+    "queen_bee_vision_multiplier": 1,
+    "keep_ratio_good_health": 25,
+    "keep_ratio_ok_health": 15,
+    "keep_ratio_bad_health": 5,
+    "starting_food_quantity_per_bee": 100,
+    "consumed_food_per_turn_per_bee": 1,
+    "food_quantity_per_pollen": 100,
+    "good_health_threshold": 25,
+    "bad_health_threshold": 15,
+
+    "wasp_vision_multiplier": 2,
+    "tendency_threshold": 10,
+    "wasp_life_points": 50,
+    "wasp_attack_power": 10,
+
+    "tick_rate": 10,
+    "background_color": [0, 100, 0],
+    "flower_color": [255, 182, 193],
+    "restoring_pollen_flower_color": [88, 57, 39],
+    "hive_color": [255, 0, 0],
+    "wasp_color": [255, 140, 0],
+    "bee_color": [255, 255, 0]
+}
