@@ -6,7 +6,7 @@ import numpy as np
 
 from pettingzoo import ParallelEnv
 
-from bee_colonies.models.flower import Flower, generate_flowers
+from bee_colonies.models.flower import Flower, generate_flowers, generate_uniform_flowers
 
 from bee_colonies.models.queen_bee import HEALTH_SCORE_FUNCTION, QueenBee
 from bee_colonies.models.bee import Bee, BEE_STAY, BEE_UP, BEE_DOWN, BEE_LEFT, BEE_RIGHT, BEE_ATTACK, BEE_PICK, \
@@ -117,13 +117,17 @@ class BeeColonyEnv(ParallelEnv):
         self.bees_by_colony: tuple[list[Bee], ...] = copy(self.init_bees)
         self.wasps: list[Wasp] = copy(self.init_wasps)
         self.timestep: int = 0
+        clusters = tuple()
 
-        clusters = tuple(
-            (np.random.randint(0, self._grid_shape[0]), np.random.randint(0, self._grid_shape[1]))
-            for _ in range(self._num_clusters)
-        )
+        if self._num_clusters == 0:
+            self.flower_coordinates = generate_uniform_flowers(self._grid_shape, self._flower_density)
+        else:
+            clusters = tuple(
+                (np.random.randint(0, self._grid_shape[0]), np.random.randint(0, self._grid_shape[1]))
+                for _ in range(self._num_clusters)
+            )
 
-        self.flower_coordinates = generate_flowers(self._grid_shape, self._flower_density, clusters)
+            self.flower_coordinates = generate_flowers(self._grid_shape, self._flower_density, clusters)
 
         self.flowers = {
             flower_coord: Flower(flower_coord) for flower_coord in self.flower_coordinates
@@ -360,6 +364,17 @@ class BeeColonyEnv(ParallelEnv):
     def __assign_beehive_location(self, clusters) -> Coord:
         """Assigns a location for a new beehive, ensuring it is adequately spaced from existing beehives."""
         min_distance = 10  # Minimum acceptable distance between beehives, adjust as needed.
+        if clusters == tuple():
+            all_coordinates = [(i, j) for i in range(self._grid_shape[0]) for j in range(self._grid_shape[1])]
+            random.shuffle(all_coordinates)  # Shuffle to get a random order
+
+            for potential_location in all_coordinates:
+                if all(self.manhattan_distance(potential_location, existing_location) >= min_distance
+                    for existing_location in self.beehive_coordinates):
+                    return potential_location
+
+            raise ValueError("No suitable location found for a new beehive")
+        
         cluster = random.choice(clusters)
 
         while True:

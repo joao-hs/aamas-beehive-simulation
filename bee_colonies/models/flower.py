@@ -1,8 +1,8 @@
 import numpy as np
 
 TIME_TO_RESTORE_POLLEN = 5
-SPREAD_DIVIDER = 7
-SPREAD_SCALE = 0.1
+SPREAD_DIVIDER = 1
+SPREAD_SCALE = 1
 
 Coord = tuple[int, int]
 
@@ -45,5 +45,19 @@ def generate_flowers(grid_shape: Coord, flower_density: float, hotspots: tuple[C
                 flower_coordinates.add(flower_coord)
     return list(flower_coordinates)
 
+def generate_uniform_flowers(grid_shape: Coord, flower_density: float) -> list[Coord]:
+    total_cells = grid_shape[0] * grid_shape[1]
+    num_flowers = int(total_cells * flower_density)
+    
+    # Generate a list of all possible coordinates in the grid
+    all_coordinates = [(i, j) for i in range(grid_shape[0]) for j in range(grid_shape[1])]
+    
+    # Randomly sample the required number of flower positions
+    flower_coordinates_indices = np.random.choice(len(all_coordinates), num_flowers, replace=False)
+    
+    # Map the sampled indices back to grid coordinates
+    flower_coordinates = [all_coordinates[i] for i in flower_coordinates_indices]
+    
+    return flower_coordinates
 
 
