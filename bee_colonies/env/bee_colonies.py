@@ -369,7 +369,7 @@ class BeeColonyEnv(ParallelEnv):
             random.shuffle(all_coordinates)  # Shuffle to get a random order
 
             for potential_location in all_coordinates:
-                if all(self.manhattan_distance(potential_location, existing_location) >= min_distance
+                if all(manhattan_distance(potential_location, existing_location) >= min_distance
                     for existing_location in self.beehive_coordinates):
                     return potential_location
 
