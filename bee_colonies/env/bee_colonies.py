@@ -387,7 +387,7 @@ class BeeColonyEnv(ParallelEnv):
 
     def __assign_wasp_start_location(self) -> Coord:
         """Assigns a start location for a new wasp, ensuring it starts far from any beehives."""
-        min_distance = 20  # Minimum distance from any beehive, adjust as needed.
+        min_distance = 15  # Minimum distance from any beehive, adjust as needed.
 
         while True:
             potential_location = self.__random_available_position()
